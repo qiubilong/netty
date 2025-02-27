@@ -23,6 +23,7 @@ import io.netty.channel.MessageSizeEstimator;
 import io.netty.channel.RecvByteBufAllocator;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.socket.SocketChannelConfig;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.internal.PlatformDependent;
 
 import java.io.IOException;
@@ -34,6 +35,7 @@ import static io.netty.channel.ChannelOption.*;
 final class IoUringSocketChannelConfig extends IoUringStreamChannelConfig implements SocketChannelConfig {
     private volatile boolean allowHalfClosure;
     private volatile boolean tcpFastopen;
+    private volatile int maxBytesPerGatheringWrite = Integer.MAX_VALUE;
 
     IoUringSocketChannelConfig(AbstractIoUringChannel channel) {
         super(channel);
@@ -328,6 +330,7 @@ final class IoUringSocketChannelConfig extends IoUringStreamChannelConfig implem
     public IoUringSocketChannelConfig setSendBufferSize(int sendBufferSize) {
         try {
             ((IoUringSocketChannel) channel).socket.setSendBufferSize(sendBufferSize);
+            calculateMaxBytesPerGatheringWrite();
             return this;
         } catch (IOException e) {
             throw new ChannelException(e);
@@ -625,5 +628,22 @@ final class IoUringSocketChannelConfig extends IoUringStreamChannelConfig implem
         super.setMessageSizeEstimator(estimator);
         return this;
     }
+
+    void setMaxBytesPerGatheringWrite(int maxBytesPerGatheringWrite) {
+        this.maxBytesPerGatheringWrite = maxBytesPerGatheringWrite;
+    }
+
+    int getMaxBytesPerGatheringWrite() {
+        return maxBytesPerGatheringWrite;
+    }
+
+    private void calculateMaxBytesPerGatheringWrite() {
+        // Multiply by 2 to give some extra space in case the OS can process write data faster than we can provide.
+        int newSendBufferSize = getSendBufferSize() << 1;
+        if (newSendBufferSize > 0) {
+            setMaxBytesPerGatheringWrite(newSendBufferSize);
+        }
+    }
+
 
 }

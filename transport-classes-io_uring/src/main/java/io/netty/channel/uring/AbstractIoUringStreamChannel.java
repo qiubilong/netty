@@ -35,6 +35,7 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import java.io.IOException;
 import java.net.SocketAddress;
 
+import static io.netty.channel.internal.ChannelUtils.MAX_BYTES_PER_GATHERING_WRITE_ATTEMPTED_LOW_THRESHOLD;
 import static io.netty.channel.unix.Errors.ioResult;
 
 abstract class AbstractIoUringStreamChannel extends AbstractIoUringChannel implements DuplexChannel {
@@ -227,6 +228,21 @@ abstract class AbstractIoUringStreamChannel extends AbstractIoUringChannel imple
         private ByteBuf readBuffer;
         private IovArray iovArray;
 
+
+        private void adjustMaxBytesPerGatheringWrite(int attempted, int written, int oldMaxBytesPerGatheringWrite) {
+            // By default we track the SO_SNDBUF when ever it is explicitly set. However some OSes may dynamically change
+            // SO_SNDBUF (and other characteristics that determine how much data can be written at once) so we should try
+            // make a best effort to adjust as OS behavior changes.
+            if (attempted == written) {
+                if (attempted << 1 > oldMaxBytesPerGatheringWrite) {
+                    ((IoUringSocketChannelConfig) config()).setMaxBytesPerGatheringWrite(attempted << 1);
+                }
+            } else if (attempted > MAX_BYTES_PER_GATHERING_WRITE_ATTEMPTED_LOW_THRESHOLD && written < attempted >>> 1) {
+                ((IoUringSocketChannelConfig) config()).setMaxBytesPerGatheringWrite(attempted >>> 1);
+            }
+        }
+
+
         @Override
         protected int scheduleWriteMultiple(ChannelOutboundBuffer in) {
             assert iovArray == null;
@@ -234,6 +250,7 @@ abstract class AbstractIoUringStreamChannel extends AbstractIoUringChannel imple
             int numElements = Math.min(in.size(), Limits.IOV_MAX);
             ByteBuf iovArrayBuffer = alloc().directBuffer(numElements * IovArray.IOV_SIZE);
             iovArray = new IovArray(iovArrayBuffer);
+            iovArray.maxBytes(((IoUringSocketChannelConfig) config()).getMaxBytesPerGatheringWrite());
             try {
                 int offset = iovArray.count();
                 in.forEachFlushedMessage(iovArray);
@@ -573,12 +590,18 @@ abstract class AbstractIoUringStreamChannel extends AbstractIoUringChannel imple
                 return true;
             }
 
+            long attemptedBytes;
             IovArray iovArray = this.iovArray;
             if (iovArray != null) {
                 this.iovArray = null;
+                attemptedBytes = iovArray.size();
                 iovArray.release();
+            } else {
+                attemptedBytes = res;
             }
             if (res >= 0) {
+                int maxBytesPerGatheringWrite = ((IoUringSocketChannelConfig) config()).getMaxBytesPerGatheringWrite();
+                adjustMaxBytesPerGatheringWrite((int) attemptedBytes, res, maxBytesPerGatheringWrite);
                 channelOutboundBuffer.removeBytes(res);
             } else if (res == Native.ERRNO_ECANCELED_NEGATIVE) {
                 return true;
