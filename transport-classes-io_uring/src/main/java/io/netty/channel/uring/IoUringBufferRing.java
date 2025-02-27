@@ -16,6 +16,7 @@
 package io.netty.channel.uring;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.WrappedByteBuf;
 import io.netty.util.internal.PlatformDependent;
 
 import java.util.Arrays;
@@ -25,6 +26,7 @@ final class IoUringBufferRing {
     private final long ioUringBufRingAddr;
     private final long tailFieldAddress;
     private final short entries;
+    private final int maxUnreleasedBuffers;
     private final short mask;
     private final short bufferGroupId;
     private final int ringFd;
@@ -32,15 +34,18 @@ final class IoUringBufferRing {
     private final IoUringBufferRingAllocator allocator;
     private final IoUringBufferRingExhaustedEvent exhaustedEvent;
     private final boolean incremental;
+    private final AtomicInteger unreleasedBuffers = new AtomicInteger();
+
     private boolean corrupted;
 
     IoUringBufferRing(int ringFd, long ioUringBufRingAddr,
-                      short entries, short bufferGroupId, boolean incremental,
+                      short entries, int maxUnreleasedBuffers, short bufferGroupId, boolean incremental,
                       IoUringBufferRingAllocator allocator) {
         assert entries % 2 == 0;
         this.ioUringBufRingAddr = ioUringBufRingAddr;
         this.tailFieldAddress = ioUringBufRingAddr + Native.IO_URING_BUFFER_RING_TAIL;
         this.entries = entries;
+        this.maxUnreleasedBuffers = maxUnreleasedBuffers;
         this.mask = (short) (entries - 1);
         this.bufferGroupId = bufferGroupId;
         this.ringFd = ringFd;
@@ -51,7 +56,7 @@ final class IoUringBufferRing {
     }
 
     boolean isUsable() {
-        return !corrupted;
+        return !corrupted && unreleasedBuffers.get() < maxUnreleasedBuffers;
     }
 
     void fill() {
@@ -87,7 +92,7 @@ final class IoUringBufferRing {
             throw e;
         }
         byteBuf.writerIndex(byteBuf.capacity());
-        buffers[bid] = byteBuf;
+        buffers[bid] = new IoUringBufferRingByteBuf(byteBuf);
 
         //  see:
         //  https://github.com/axboe/liburing/
@@ -162,5 +167,30 @@ final class IoUringBufferRing {
             }
         }
         Arrays.fill(buffers, null);
+    }
+
+    private final class IoUringBufferRingByteBuf extends WrappedByteBuf {
+        IoUringBufferRingByteBuf(ByteBuf buf) {
+            super(buf);
+            unreleasedBuffers.incrementAndGet();
+        }
+
+        @Override
+        public boolean release() {
+            if (super.release()) {
+                unreleasedBuffers.decrementAndGet();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean release(int decrement) {
+            if (super.release(decrement)) {
+                unreleasedBuffers.decrementAndGet();
+                return true;
+            }
+            return false;
+        }
     }
 }
