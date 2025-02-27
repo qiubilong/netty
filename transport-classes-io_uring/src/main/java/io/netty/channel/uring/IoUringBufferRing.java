@@ -19,7 +19,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.WrappedByteBuf;
 import io.netty.util.internal.PlatformDependent;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 final class IoUringBufferRing {
@@ -56,8 +58,19 @@ final class IoUringBufferRing {
     }
 
     boolean isUsable() {
-        return !corrupted && unreleasedBuffers.get() < maxUnreleasedBuffers;
+        return !corrupted;
     }
+
+    private final Queue<AbstractIoUringChannel> channels = new ArrayDeque<>();
+
+    boolean reserveOrReadLater(AbstractIoUringChannel channel) {
+        if (unreleasedBuffers.get() < maxUnreleasedBuffers) {
+            return true;
+        }
+        channels.offer(channel);
+        return false;
+    }
+
 
     void fill() {
         for (short i = 0; i < entries; i++) {
@@ -178,7 +191,7 @@ final class IoUringBufferRing {
         @Override
         public boolean release() {
             if (super.release()) {
-                unreleasedBuffers.decrementAndGet();
+                decrement();
                 return true;
             }
             return false;
@@ -187,10 +200,22 @@ final class IoUringBufferRing {
         @Override
         public boolean release(int decrement) {
             if (super.release(decrement)) {
-                unreleasedBuffers.decrementAndGet();
+                decrement();
                 return true;
             }
             return false;
+        }
+
+        private void decrement() {
+            if (unreleasedBuffers.decrementAndGet() < maxUnreleasedBuffers / 2) {
+                for (;;) {
+                    AbstractIoUringChannel channel = channels.poll();
+                    if (channel == null) {
+                        break;
+                    }
+                    channel.doBeginReadNow();
+                }
+            }
         }
     }
 }

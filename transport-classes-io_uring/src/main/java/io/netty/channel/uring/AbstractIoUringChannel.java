@@ -335,7 +335,7 @@ abstract class AbstractIoUringChannel extends AbstractChannel implements UnixCha
         doBeginReadNow();
     }
 
-    private void doBeginReadNow() {
+    final void doBeginReadNow() {
         if (inputClosedSeenErrorOnRead) {
             // We did see an error while reading and so closed the input.
             return;

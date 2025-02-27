@@ -325,7 +325,10 @@ abstract class AbstractIoUringStreamChannel extends AbstractIoUringChannel imple
             final IoUringRecvByteAllocatorHandle allocHandle = recvBufAllocHandle();
 
             if (bufferRing != null && bufferRing.isUsable()) {
-                return scheduleReadProviderBuffer(bufferRing, first, socketIsEmpty);
+                if (bufferRing.reserveOrReadLater(AbstractIoUringStreamChannel.this)) {
+                    return scheduleReadProviderBuffer(bufferRing, first, socketIsEmpty);
+                }
+                return 0;
             }
 
             // We either have no buffer ring configured or we force a recv without using a buffer ring.

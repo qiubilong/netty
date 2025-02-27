@@ -47,7 +47,7 @@ public class EchoServer {
             ioHandlerFactory = IoUringIoHandler.newFactory(
                     new IoUringIoHandlerConfig()
                             .setBufferRingConfig(
-                                    new IoUringBufferRingConfig((short) 0, (short) 64,
+                                    new IoUringBufferRingConfig((short) 0, (short) 64, 64 * 4,
                                             false, new IoUringFixedBufferRingAllocator(64 * 1024))));
             serverChannelClass = IoUringServerSocketChannel.class;
         }
