@@ -142,10 +142,10 @@ public final class IoUring {
         UNAVAILABILITY_CAUSE = cause;
         IORING_CQE_F_SOCK_NONEMPTY_SUPPORTED = socketNonEmptySupported;
         IORING_SPLICE_SUPPORTED = spliceSupported;
-        IORING_ACCEPT_NO_WAIT_SUPPORTED = acceptSupportNoWait;
+        IORING_ACCEPT_NO_WAIT_SUPPORTED = false; // acceptSupportNoWait;
         IORING_ACCEPT_MULTISHOT_SUPPORTED = acceptMultishotSupported;
         IORING_RECV_MULTISHOT_SUPPORTED = recvMultishotSupported;
-        IORING_RECVSEND_BUNDLE_SUPPORTED = recvsendBundleSupported;
+        IORING_RECVSEND_BUNDLE_SUPPORTED = false; // recvsendBundleSupported;
         IORING_POLL_ADD_MULTISHOT_SUPPORTED = pollAddMultishotSupported;
         IORING_REGISTER_IOWQ_MAX_WORKERS_SUPPORTED = registerIowqWorkersSupported;
         IORING_SETUP_SUBMIT_ALL_SUPPORTED = submitAllSupported;
@@ -153,7 +153,7 @@ public final class IoUring {
         IORING_SETUP_SINGLE_ISSUER_SUPPORTED = singleIssuerSupported;
         IORING_SETUP_DEFER_TASKRUN_SUPPORTED = deferTaskrunSupported;
         IORING_REGISTER_BUFFER_RING_SUPPORTED = registerBufferRingSupported;
-        IORING_REGISTER_BUFFER_RING_INC_SUPPORTED = registerBufferRingIncSupported;
+        IORING_REGISTER_BUFFER_RING_INC_SUPPORTED = false; // registerBufferRingIncSupported;
 
         IORING_ACCEPT_MULTISHOT_ENABLED = IORING_ACCEPT_MULTISHOT_SUPPORTED && SystemPropertyUtil.getBoolean(
                 "io.netty.iouring.acceptMultiShotEnabled", true);
