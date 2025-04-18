@@ -53,7 +53,7 @@ public final class DefaultEventExecutorChooserFactory implements EventExecutorCh
 
         @Override
         public EventExecutor next() {
-            return executors[idx.getAndIncrement() & executors.length - 1];
+            return executors[idx.getAndIncrement() & executors.length - 1]; /* executors.length是2的倍数，相当于取模 */
         }
     }
 

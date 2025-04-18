@@ -59,7 +59,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
              *
              *  See <a href="https://github.com/netty/netty/issues/2308">#2308</a>.
              */
-            return provider.openServerSocketChannel();
+            return provider.openServerSocketChannel(); /* 实例化JDK NIO ServerSocketChannel，不同不操作系统不同 */
         } catch (IOException e) {
             throw new ChannelException(
                     "Failed to open a server socket.", e);
@@ -72,7 +72,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
      * Create a new instance
      */
     public NioServerSocketChannel() {
-        this(newSocket(DEFAULT_SELECTOR_PROVIDER));
+        this(newSocket(DEFAULT_SELECTOR_PROVIDER)); /* 实例化JDK NIO ServerSocketChannel并注册Accept事件 以及 管道PipeLine */
     }
 
     /**
@@ -86,7 +86,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
      * Create a new instance using the given {@link ServerSocketChannel}.
      */
     public NioServerSocketChannel(ServerSocketChannel channel) {
-        super(null, channel, SelectionKey.OP_ACCEPT);
+        super(null, channel, SelectionKey.OP_ACCEPT);/* 实例化JDK NIO ServerSocketChannel并注册监听事件 以及 channel管道PipeLine */
         config = new NioServerSocketChannelConfig(this, javaChannel().socket());
     }
 
@@ -131,7 +131,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
     @Override
     protected void doBind(SocketAddress localAddress) throws Exception {
         if (PlatformDependent.javaVersion() >= 7) {
-            javaChannel().bind(localAddress, config.getBacklog());
+            javaChannel().bind(localAddress, config.getBacklog());/* JDK NIO ServerSocketChannel绑定端口地址 */
         } else {
             javaChannel().socket().bind(localAddress, config.getBacklog());
         }
@@ -144,7 +144,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
     @Override
     protected int doReadMessages(List<Object> buf) throws Exception {
-        SocketChannel ch = SocketUtils.accept(javaChannel());
+        SocketChannel ch = SocketUtils.accept(javaChannel()); /* 处理客户端连接 serverSocketChannel.accept() */
 
         try {
             if (ch != null) {

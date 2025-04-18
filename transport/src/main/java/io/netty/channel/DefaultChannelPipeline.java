@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * The default {@link ChannelPipeline} implementation.  It is usually created
  * by a {@link Channel} implementation when the {@link Channel} is created.
  */
-public class DefaultChannelPipeline implements ChannelPipeline {
+public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表Handler */
 
     static final InternalLogger logger = InternalLoggerFactory.getInstance(DefaultChannelPipeline.class);
 
@@ -61,8 +61,8 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private static final AtomicReferenceFieldUpdater<DefaultChannelPipeline, MessageSizeEstimator.Handle> ESTIMATOR =
             AtomicReferenceFieldUpdater.newUpdater(
                     DefaultChannelPipeline.class, MessageSizeEstimator.Handle.class, "estimatorHandle");
-    final AbstractChannelHandlerContext head;
-    final AbstractChannelHandlerContext tail;
+    final AbstractChannelHandlerContext head; /* 管道 - 头部Handler */
+    final AbstractChannelHandlerContext tail; /* 管道 - 头部Handler */
 
     private final Channel channel;
     private final ChannelFuture succeededFuture;
@@ -93,7 +93,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         this.channel = ObjectUtil.checkNotNull(channel, "channel");
         succeededFuture = new SucceededChannelFuture(channel, null);
         voidPromise =  new VoidChannelPromise(channel, true);
-
+        /* 初始化 管道的 头结点 、尾结点 */
         tail = new TailContext(this);
         head = new HeadContext(this);
 
@@ -606,7 +606,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     private void callHandlerAdded0(final AbstractChannelHandlerContext ctx) {
         try {
-            ctx.callHandlerAdded();
+            ctx.callHandlerAdded();/* 执行初始化InitChannel回调 */
         } catch (Throwable t) {
             boolean removed = false;
             try {
@@ -647,7 +647,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             firstRegistration = false;
             // We are now registered to the EventLoop. It's time to call the callbacks for the ChannelHandlers,
             // that were added before the registration was done.
-            callHandlerAddedForAllHandlers();
+            callHandlerAddedForAllHandlers();/* 执行自定义ChannelInitializer初始化回调 --> 添加自定义ChannelHandler */
         }
     }
 
@@ -812,7 +812,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline fireChannelRegistered() {
-        AbstractChannelHandlerContext.invokeChannelRegistered(head);
+        AbstractChannelHandlerContext.invokeChannelRegistered(head);/* 从 管道处理器 头部到尾部 传递 channel注册成功 事件 */
         return this;
     }
 
@@ -970,7 +970,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
-        return tail.bind(localAddress, promise);
+        return tail.bind(localAddress, promise); /* 从管道尾部寻找，处理Bind服务器地址端口的ChannelHandler进行绑定 - HeadContext */
     }
 
     @Override
@@ -1112,7 +1112,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         // the EventLoop.
         PendingHandlerCallback task = pendingHandlerCallbackHead;
         while (task != null) {
-            task.execute();
+            task.execute();/* 执行自定义ChannelInitializer初始化回调 --> 添加自定义ChannelHandler */
             task = task.next;
         }
     }
@@ -1331,7 +1331,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         @Override
         public void bind(
                 ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) {
-            unsafe.bind(localAddress, promise);
+            unsafe.bind(localAddress, promise); /* 绑定端口 - NioMessageUnsafe - AbstractUnsafe */
         }
 
         @Override
@@ -1380,7 +1380,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) {
             invokeHandlerAddedIfNeeded();
-            ctx.fireChannelRegistered();
+            ctx.fireChannelRegistered();/* 执行channelRegistered通知，并传递到下个ChannelHandler */
         }
 
         @Override
@@ -1458,9 +1458,9 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
         @Override
         void execute() {
-            EventExecutor executor = ctx.executor();
+            EventExecutor executor = ctx.executor();//channel绑定线程
             if (executor.inEventLoop()) {
-                callHandlerAdded0(ctx);
+                callHandlerAdded0(ctx);/* 执行初始化InitChannel回调 */
             } else {
                 try {
                     executor.execute(this);

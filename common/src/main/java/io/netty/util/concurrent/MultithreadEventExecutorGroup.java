@@ -32,11 +32,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class MultithreadEventExecutorGroup extends AbstractEventExecutorGroup {
 
-    private final EventExecutor[] children;
+    private final EventExecutor[] children; /* 线程组 */
     private final Set<EventExecutor> readonlyChildren;
     private final AtomicInteger terminatedChildren = new AtomicInteger();
     private final Promise<?> terminationFuture = new DefaultPromise(GlobalEventExecutor.INSTANCE);
-    private final EventExecutorChooserFactory.EventExecutorChooser chooser;
+    private final EventExecutorChooserFactory.EventExecutorChooser chooser; /* 线程选择器 - PowerOfTwoEventExecutorChooser */
 
     /**
      * Create a new instance.
@@ -57,7 +57,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
      * @param args              arguments which will passed to each {@link #newChild(Executor, Object...)} call
      */
     protected MultithreadEventExecutorGroup(int nThreads, Executor executor, Object... args) {
-        this(nThreads, executor, DefaultEventExecutorChooserFactory.INSTANCE, args);
+        this(nThreads, executor, DefaultEventExecutorChooserFactory.INSTANCE, args);/* 创建 EventLoop事件循环处理 线程组，数量默认CPU核数两倍 */
     }
 
     /**
@@ -73,15 +73,15 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         checkPositive(nThreads, "nThreads");
 
         if (executor == null) {
-            executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
+            executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());/* 默认任务执行器，一个任务一个线程 */
         }
 
-        children = new EventExecutor[nThreads];
+        children = new EventExecutor[nThreads];        /* 创建 EventLoop线程组 */
 
         for (int i = 0; i < nThreads; i ++) {
             boolean success = false;
             try {
-                children[i] = newChild(executor, args);
+                children[i] = newChild(executor, args); /* 实例化 EventLoop线程 -- NioEventLoopGroup  --> SingleThreadEventLoop --> IO多路复用器 Selector和异步任务队列  */
                 success = true;
             } catch (Exception e) {
                 // TODO: Think about if this is a good exception type
@@ -108,7 +108,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             }
         }
 
-        chooser = chooserFactory.newChooser(children);
+        chooser = chooserFactory.newChooser(children);/* 线程选择器 */
 
         final FutureListener<Object> terminationListener = new FutureListener<Object>() {
             @Override

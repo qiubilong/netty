@@ -56,14 +56,14 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     @SuppressWarnings("unchecked")
     private static final Map.Entry<AttributeKey<?>, Object>[] EMPTY_ATTRIBUTE_ARRAY = new Map.Entry[0];
 
-    volatile EventLoopGroup group;
+    volatile EventLoopGroup group; /* ( ServerBootstrap --> Boss工作线程EventLoop组（负责接收客户端连接）)      /   客户端Bootstrap -->Work工作线程组      */
     @SuppressWarnings("deprecation")
     private volatile ChannelFactory<? extends C> channelFactory;
     private volatile SocketAddress localAddress;
 
     // The order in which ChannelOptions are applied is important they may depend on each other for validation
     // purposes.
-    private final Map<ChannelOption<?>, Object> options = new LinkedHashMap<ChannelOption<?>, Object>();
+    private final Map<ChannelOption<?>, Object> options = new LinkedHashMap<ChannelOption<?>, Object>(); /* TCP选项 */
     private final Map<AttributeKey<?>, Object> attrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
     private volatile ChannelHandler handler;
 
@@ -242,7 +242,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     /**
      * Create a new {@link Channel} and bind it.
      */
-    public ChannelFuture bind(int inetPort) {
+    public ChannelFuture bind(int inetPort) { /* 创建NIO SocketChannel、绑定处理线程、注册NIO多路复用、 绑定端口 */
         return bind(new InetSocketAddress(inetPort));
     }
 
@@ -269,7 +269,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     private ChannelFuture doBind(final SocketAddress localAddress) {
-        final ChannelFuture regFuture = initAndRegister();
+        final ChannelFuture regFuture = initAndRegister(); /*  1、实例化 NioServerSocketChannel（ServerSocketChannel）并 绑定处理线程 SingleThreadEventLoop */
         final Channel channel = regFuture.channel();
         if (regFuture.cause() != null) {
             return regFuture;
@@ -296,7 +296,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
                         // See https://github.com/netty/netty/issues/2586
                         promise.registered();
 
-                        doBind0(regFuture, channel, localAddress, promise);
+                        doBind0(regFuture, channel, localAddress, promise); /* 2、从管道尾部寻找，处理Bind服务器地址端口的ChannelHandler进行绑定 - HeadContext */
                     }
                 }
             });
@@ -307,8 +307,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
-            channel = channelFactory.newChannel();
-            init(channel);
+            channel = channelFactory.newChannel(); /* ReflectiveChannelFactory 创建 NioServerSocketChannel（ServerSocketChannel） or （NioSocketChannel）SocketChannel */
+            init(channel);/* 初始化Channel，添加自定义ChannelInitializer */
         } catch (Throwable t) {
             if (channel != null) {
                 // channel can be null if newChannel crashed (eg SocketException("too many open files"))
@@ -320,7 +320,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
 
-        ChannelFuture regFuture = config().group().register(channel);
+        ChannelFuture regFuture = config().group().register(channel); /* Channel绑定EventLoop线程 &注册NIO多路复用 &执行ChannelInitializer -- MultithreadEventLoopGroup --> SingleThreadEventLoop */
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
                 channel.close();
@@ -353,7 +353,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             @Override
             public void run() {
                 if (regFuture.isSuccess()) {
-                    channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                    channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE); /* 从管道尾部寻找，处理Bind服务器地址端口的ChannelHandler进行绑定 - HeadContext */
                 } else {
                     promise.setFailure(regFuture.cause());
                 }

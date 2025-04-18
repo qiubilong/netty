@@ -49,7 +49,7 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
      * @see MultithreadEventExecutorGroup#MultithreadEventExecutorGroup(int, Executor, Object...)
      */
     protected MultithreadEventLoopGroup(int nThreads, Executor executor, Object... args) {
-        super(nThreads == 0 ? DEFAULT_EVENT_LOOP_THREADS : nThreads, executor, args);
+        super(nThreads == 0 ? DEFAULT_EVENT_LOOP_THREADS : nThreads, executor, args);/* 创建 EventLoop事件循环处理 线程组，数量默认CPU核数两倍 */
     }
 
     /**
@@ -75,7 +75,7 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
 
     @Override
     public EventLoop next() {
-        return (EventLoop) super.next();
+        return (EventLoop) super.next(); /* 从线程组中挑选一个线程，MultithreadEventExecutorGroup */
     }
 
     @Override
@@ -83,7 +83,7 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
 
     @Override
     public ChannelFuture register(Channel channel) {
-        return next().register(channel);
+        return next().register(channel);/* Channel绑定EventLoop线程 &注册NIO多路复用 &执行ChannelInitializer  - SingleThreadEventLoop */
     }
 
     @Override

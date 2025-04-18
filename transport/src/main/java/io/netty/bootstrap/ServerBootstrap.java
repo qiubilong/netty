@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * {@link Bootstrap} sub-class which allows easy bootstrap of {@link ServerChannel}
- *
+ *  服务器启动引导类
  */
 public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerChannel> {
 
@@ -51,8 +51,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     private final Map<ChannelOption<?>, Object> childOptions = new LinkedHashMap<ChannelOption<?>, Object>();
     private final Map<AttributeKey<?>, Object> childAttrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
     private final ServerBootstrapConfig config = new ServerBootstrapConfig(this);
-    private volatile EventLoopGroup childGroup;
-    private volatile ChannelHandler childHandler;
+    private volatile EventLoopGroup childGroup;    /*  worker工作线程组  */
+    private volatile ChannelHandler childHandler;  /*  客户端Channel通道建立后，回调ChannelHandler，用户初始化channel的pipeLine */
 
     public ServerBootstrap() { }
 
@@ -80,11 +80,11 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
      * {@link Channel}'s.
      */
     public ServerBootstrap group(EventLoopGroup parentGroup, EventLoopGroup childGroup) {
-        super.group(parentGroup);
+        super.group(parentGroup); /* 设置boss工作线程组，负责接收客户端连接 */
         if (this.childGroup != null) {
             throw new IllegalStateException("childGroup set already");
         }
-        this.childGroup = ObjectUtil.checkNotNull(childGroup, "childGroup");
+        this.childGroup = ObjectUtil.checkNotNull(childGroup, "childGroup"); /* 设置工作线程组 */
         return this;
     }
 
@@ -128,7 +128,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     }
 
     @Override
-    void init(Channel channel) {
+    void init(Channel channel) { /* 初始化服务端 NioServerSocketChannel --> JDK ServerSocketChannel */
         setChannelOptions(channel, newOptionsArray(), logger);
         setAttributes(channel, newAttributesArray());
 
@@ -139,12 +139,12 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         final Entry<ChannelOption<?>, Object>[] currentChildOptions = newOptionsArray(childOptions);
         final Entry<AttributeKey<?>, Object>[] currentChildAttrs = newAttributesArray(childAttrs);
 
-        p.addLast(new ChannelInitializer<Channel>() {
+        p.addLast(new ChannelInitializer<Channel>() { /* 服务端 - 自定义ChannelInitializer初始化回调 --> 添加自定义ChannelHandler //// Channel注册多路复用器后调用 */
             @Override
             public void initChannel(final Channel ch) {
                 final ChannelPipeline pipeline = ch.pipeline();
                 ChannelHandler handler = config.handler();
-                if (handler != null) {
+                if (handler != null) {//handler==null
                     pipeline.addLast(handler);
                 }
 

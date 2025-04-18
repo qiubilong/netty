@@ -50,7 +50,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     private static final InternalLogger logger =
             InternalLoggerFactory.getInstance(AbstractNioChannel.class);
 
-    private final SelectableChannel ch;
+    private final SelectableChannel ch; /* JDK原生 NIO 的 ServerSocketChannel、SocketChannel */
     protected final int readInterestOp;
     volatile SelectionKey selectionKey;
     boolean readPending;
@@ -77,11 +77,11 @@ public abstract class AbstractNioChannel extends AbstractChannel {
      * @param readInterestOp    the ops to set to receive data from the {@link SelectableChannel}
      */
     protected AbstractNioChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
-        super(parent);
-        this.ch = ch;
+        super(parent); /* 创建Channel管道PipeLine */
+        this.ch = ch; // JDK原生 NIO SocketChannel
         this.readInterestOp = readInterestOp;
         try {
-            ch.configureBlocking(false);
+            ch.configureBlocking(false);/* 设置JDK NIO SocketChannel 非阻塞模式 */
         } catch (IOException e) {
             try {
                 ch.close();
@@ -377,7 +377,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         boolean selected = false;
         for (;;) {
             try {
-                selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
+                selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this); /* 多路复用器中注册监听channel */
                 return;
             } catch (CancelledKeyException e) {
                 if (!selected) {

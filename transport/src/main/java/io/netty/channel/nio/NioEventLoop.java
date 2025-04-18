@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link Selector} and so does the multi-plexing of these in the event loop.
  *
  */
-public final class NioEventLoop extends SingleThreadEventLoop {
+public final class NioEventLoop extends SingleThreadEventLoop { /* 事件循环处理线程 */
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NioEventLoop.class);
 
@@ -111,7 +111,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     /**
      * The NIO {@link Selector}.
      */
-    private Selector selector;
+    private Selector selector;  /* IO多路复用器，监听多个channel的就绪的连接、可读、可写事件 */
     private Selector unwrappedSelector;
     private SelectedSelectionKeySet selectedKeys;
 
@@ -136,10 +136,10 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                  SelectStrategy strategy, RejectedExecutionHandler rejectedExecutionHandler,
                  EventLoopTaskQueueFactory taskQueueFactory, EventLoopTaskQueueFactory tailTaskQueueFactory) {
         super(parent, executor, false, newTaskQueue(taskQueueFactory), newTaskQueue(tailTaskQueueFactory),
-                rejectedExecutionHandler);
+                rejectedExecutionHandler);          /* 1、创建 异步任务队列 */
         this.provider = ObjectUtil.checkNotNull(selectorProvider, "selectorProvider");
         this.selectStrategy = ObjectUtil.checkNotNull(strategy, "selectStrategy");
-        final SelectorTuple selectorTuple = openSelector();
+        final SelectorTuple selectorTuple = openSelector(); /* 2、实例化一个IO多路复用器 Selector，Linux系统是EPollSelectorProvider --> EPollSelectorImpl --> EPollArrayWrapper */
         this.selector = selectorTuple.selector;
         this.unwrappedSelector = selectorTuple.unwrappedSelector;
     }
@@ -170,7 +170,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     private SelectorTuple openSelector() {
         final Selector unwrappedSelector;
         try {
-            unwrappedSelector = provider.openSelector();
+            unwrappedSelector = provider.openSelector();/* 就是NIO的Selector.open()，实例化一个IO多路复用器，Linux系统是 EPollSelectorProvider --> EPollSelectorImpl --> EPollArrayWrapper*/
         } catch (IOException e) {
             throw new ChannelException("failed to open a new selector", e);
         }
@@ -434,7 +434,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     @Override
     protected void run() {
         int selectCnt = 0;
-        for (;;) {
+        for (;;) {  /* 循环处理事件 */
             try {
                 int strategy;
                 try {
@@ -454,7 +454,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         nextWakeupNanos.set(curDeadlineNanos);
                         try {
                             if (!hasTasks()) {
-                                strategy = select(curDeadlineNanos);
+                                strategy = select(curDeadlineNanos); /* 1、Selector.select() 限时等待多个客户端channel的多路复用IO事件 */
                             }
                         } finally {
                             // This update is just to help block unnecessary selector wakeups
@@ -481,11 +481,11 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 if (ioRatio == 100) {
                     try {
                         if (strategy > 0) {
-                            processSelectedKeys();
+                            processSelectedKeys(); /*  2、处理TCP 就绪IO事件 */
                         }
                     } finally {
                         // Ensure we always run tasks.
-                        ranTasks = runAllTasks();
+                        ranTasks = runAllTasks(); /*  3、处理异步任务 */
                     }
                 } else if (strategy > 0) {
                     final long ioStartTime = System.nanoTime();
@@ -811,7 +811,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
         // Timeout will only be 0 if deadline is within 5 microsecs
         long timeoutMillis = deadlineToDelayNanos(deadlineNanos + 995000L) / 1000000L;
-        return timeoutMillis <= 0 ? selector.selectNow() : selector.select(timeoutMillis);
+        return timeoutMillis <= 0 ? selector.selectNow() : selector.select(timeoutMillis); /* 限时等待Epoll就绪IO事件 */
     }
 
     private void selectAgain() {

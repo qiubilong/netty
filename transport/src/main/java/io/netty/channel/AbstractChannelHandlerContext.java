@@ -61,7 +61,7 @@ import static io.netty.channel.ChannelHandlerMask.mask;
 abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, ResourceLeakHint {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(AbstractChannelHandlerContext.class);
-    volatile AbstractChannelHandlerContext next;
+    volatile AbstractChannelHandlerContext next; /* 处理器双向链表指针 */
     volatile AbstractChannelHandlerContext prev;
 
     private static final AtomicIntegerFieldUpdater<AbstractChannelHandlerContext> HANDLER_STATE_UPDATER =
@@ -85,8 +85,8 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
      */
     private static final int INIT = 0;
 
-    private final DefaultChannelPipeline pipeline;
-    private final String name;
+    private final DefaultChannelPipeline pipeline; /* 管道容器 */
+    private final String name; /* ChannelHandler处理器名字 */
     private final boolean ordered;
     private final int executionMask;
 
@@ -99,7 +99,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     // There is no need to make this volatile as at worse it will just create a few more instances then needed.
     private Tasks invokeTasks;
 
-    private volatile int handlerState = INIT;
+    private volatile int handlerState = INIT; /* 处理器添加到 管道 的 处理标识 */
 
     AbstractChannelHandlerContext(DefaultChannelPipeline pipeline, EventExecutor executor,
                                   String name, Class<? extends ChannelHandler> handlerClass) {
@@ -142,14 +142,14 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     @Override
     public ChannelHandlerContext fireChannelRegistered() {
-        invokeChannelRegistered(findContextInbound(MASK_CHANNEL_REGISTERED));
+        invokeChannelRegistered(findContextInbound(MASK_CHANNEL_REGISTERED));/* 寻找下一个入站 ChannelHandler，传递消息 */
         return this;
     }
 
     static void invokeChannelRegistered(final AbstractChannelHandlerContext next) {
-        EventExecutor executor = next.executor();
+        EventExecutor executor = next.executor(); /* Channel绑定线程 */
         if (executor.inEventLoop()) {
-            next.invokeChannelRegistered();
+            next.invokeChannelRegistered();/* 执行channelRegistered通知，并传递到下个ChannelHandler */
         } else {
             executor.execute(new Runnable() {
                 @Override
@@ -163,7 +163,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     private void invokeChannelRegistered() {
         if (invokeHandler()) {
             try {
-                ((ChannelInboundHandler) handler()).channelRegistered(this);
+                ((ChannelInboundHandler) handler()).channelRegistered(this);/* 执行channelRegistered通知，并传递到下个ChannelHandler */
             } catch (Throwable t) {
                 invokeExceptionCaught(t);
             }
@@ -485,10 +485,10 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             return promise;
         }
 
-        final AbstractChannelHandlerContext next = findContextOutbound(MASK_BIND);
-        EventExecutor executor = next.executor();
+        final AbstractChannelHandlerContext next = findContextOutbound(MASK_BIND);/* 查找可以处理Bind服务器地址端口的Handler - HeadContext */
+        EventExecutor executor = next.executor();/* Channel绑定的线程 */
         if (executor.inEventLoop()) {
-            next.invokeBind(localAddress, promise);
+            next.invokeBind(localAddress, promise);/* 绑定地址端口 - ServerSocketChannel */
         } else {
             safeExecute(executor, new Runnable() {
                 @Override
@@ -503,7 +503,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     private void invokeBind(SocketAddress localAddress, ChannelPromise promise) {
         if (invokeHandler()) {
             try {
-                ((ChannelOutboundHandler) handler()).bind(this, localAddress, promise);
+                ((ChannelOutboundHandler) handler()).bind(this, localAddress, promise); /* 绑定服务器地址端口 - HeadContext */
             } catch (Throwable t) {
                 notifyOutboundHandlerException(t, promise);
             }
@@ -935,7 +935,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         // We must call setAddComplete before calling handlerAdded. Otherwise if the handlerAdded method generates
         // any pipeline events ctx.handler() will miss them because the state will not allow it.
         if (setAddComplete()) {
-            handler().handlerAdded(this);
+            handler().handlerAdded(this);/* 执行自定义ChannelInitializer初始化回调 --> 添加自定义ChannelHandler   ( ServerBootStrap中添加 ) */
         }
     }
 

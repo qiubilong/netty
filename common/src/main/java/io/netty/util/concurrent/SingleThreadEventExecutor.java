@@ -74,12 +74,12 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             AtomicReferenceFieldUpdater.newUpdater(
                     SingleThreadEventExecutor.class, ThreadProperties.class, "threadProperties");
 
-    private final Queue<Runnable> taskQueue;
+    private final Queue<Runnable> taskQueue; /* 异步任务队列 */
 
     private volatile Thread thread;
     @SuppressWarnings("unused")
     private volatile ThreadProperties threadProperties;
-    private final Executor executor;
+    private final Executor executor;      /* 异步任务执行器 */
     private volatile boolean interrupted;
 
     private final CountDownLatch threadLock = new CountDownLatch(1);
@@ -285,7 +285,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             if (scheduledTask == null) {
                 return true;
             }
-            if (!taskQueue.offer(scheduledTask)) {
+            if (!taskQueue.offer(scheduledTask)) { /* 将可执行的延迟任务 转存到 异步任务队列 */
                 // No space left in the task queue add it back to the scheduledTaskQueue so we pick it up again.
                 scheduledTaskQueue.add((ScheduledFutureTask<?>) scheduledTask);
                 return false;
@@ -370,8 +370,8 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         boolean ranAtLeastOne = false;
 
         do {
-            fetchedAll = fetchFromScheduledTaskQueue();
-            if (runAllTasksFrom(taskQueue)) {
+            fetchedAll = fetchFromScheduledTaskQueue();/* 获取可执行的延迟任务 迁移到 异步任务队列 */
+            if (runAllTasksFrom(taskQueue)) {/* 执行异步任务 */
                 ranAtLeastOne = true;
             }
         } while (!fetchedAll); // keep on processing until we fetched all scheduled tasks.
@@ -417,12 +417,12 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      * @return {@code true} if at least one task was executed.
      */
     protected final boolean runAllTasksFrom(Queue<Runnable> taskQueue) {
-        Runnable task = pollTaskFrom(taskQueue);
+        Runnable task = pollTaskFrom(taskQueue); /* 消费一个异步任务 --> askQueue.poll() */
         if (task == null) {
             return false;
         }
         for (;;) {
-            safeExecute(task);
+            safeExecute(task);/* 执行异步任务 --> task.run() */
             task = pollTaskFrom(taskQueue);
             if (task == null) {
                 return true;
