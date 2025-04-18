@@ -242,7 +242,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     /**
      * Create a new {@link Channel} and bind it.
      */
-    public ChannelFuture bind(int inetPort) { /* 创建NIO SocketChannel、绑定处理线程、注册NIO多路复用、 绑定端口 */
+    public ChannelFuture bind(int inetPort) { /* 实例化NIOServerSocketChannel  &绑定EventLoop处理线程 &注册NIO多路复用 &执行ChannelInitializer & 绑定地址端口 */
         return bind(new InetSocketAddress(inetPort));
     }
 
@@ -269,7 +269,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     private ChannelFuture doBind(final SocketAddress localAddress) {
-        final ChannelFuture regFuture = initAndRegister(); /*  1、实例化 NioServerSocketChannel（ServerSocketChannel）并 绑定处理线程 SingleThreadEventLoop */
+        final ChannelFuture regFuture = initAndRegister(); /*  1、实例化 NioServerSocketChannel（ServerSocketChannel）&绑定 EventLoop处理线程 SingleThreadEventLoop */
         final Channel channel = regFuture.channel();
         if (regFuture.cause() != null) {
             return regFuture;
@@ -296,7 +296,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
                         // See https://github.com/netty/netty/issues/2586
                         promise.registered();
 
-                        doBind0(regFuture, channel, localAddress, promise); /* 2、从管道尾部寻找，处理Bind服务器地址端口的ChannelHandler进行绑定 - HeadContext */
+                        doBind0(regFuture, channel, localAddress, promise); /* 2、从pipeLine管道尾部寻找处理 Bind服务器地址端口的ChannelHandler进行绑定 - HeadContext */
                     }
                 }
             });
@@ -320,7 +320,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
 
-        ChannelFuture regFuture = config().group().register(channel); /* Channel绑定EventLoop线程 &注册NIO多路复用 &执行ChannelInitializer -- MultithreadEventLoopGroup --> SingleThreadEventLoop */
+        ChannelFuture regFuture = config().group().register(channel); /* Channel绑定EventLoop线程 & 注册NIO多路复用 & 执行ChannelInitializer -- MultithreadEventLoopGroup --> SingleThreadEventLoop */
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
                 channel.close();
