@@ -946,7 +946,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             try {
-                doWrite(outboundBuffer);
+                doWrite(outboundBuffer);/* 写缓存到SocketChannel */
             } catch (Throwable t) {
                 handleWriteError(t);
             } finally {

@@ -454,7 +454,7 @@ public final class NioEventLoop extends SingleThreadEventLoop { /* 事件循环�
                         nextWakeupNanos.set(curDeadlineNanos);
                         try {
                             if (!hasTasks()) {
-                                strategy = select(curDeadlineNanos); /* 1、Selector.select() 限时等待多个客户端channel的多路复用IO事件 */
+                                strategy = select(curDeadlineNanos); /* 1、NIO多路复用Selector.select() 限时等待多个客户端channel的就绪IO事件 */
                             }
                         } finally {
                             // This update is just to help block unnecessary selector wakeups
@@ -467,7 +467,7 @@ public final class NioEventLoop extends SingleThreadEventLoop { /* 事件循环�
                 } catch (IOException e) {
                     // If we receive an IOException here its because the Selector is messed up. Let's rebuild
                     // the selector and retry. https://github.com/netty/netty/issues/8566
-                    rebuildSelector0();
+                    rebuildSelector0();/* 创建一个新的Selector，解决Epoll空轮询 cpu 100% bug */
                     selectCnt = 0;
                     handleLoopException(e);
                     continue;
@@ -481,20 +481,20 @@ public final class NioEventLoop extends SingleThreadEventLoop { /* 事件循环�
                 if (ioRatio == 100) {
                     try {
                         if (strategy > 0) {
-                            processSelectedKeys(); /*  2、处理TCP 就绪IO事件 */
+                            processSelectedKeys();
                         }
                     } finally {
                         // Ensure we always run tasks.
-                        ranTasks = runAllTasks(); /*  3、处理异步任务 */
+                        ranTasks = runAllTasks();
                     }
                 } else if (strategy > 0) {
                     final long ioStartTime = System.nanoTime();
                     try {
-                        processSelectedKeys();
+                        processSelectedKeys();/*  2、处理Channel就绪的连接、读、写 事件 */
                     } finally {
                         // Ensure we always run tasks.
                         final long ioTime = System.nanoTime() - ioStartTime;
-                        ranTasks = runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
+                        ranTasks = runAllTasks(ioTime * (100 - ioRatio) / ioRatio);/*  3、处理异步任务 */
                     }
                 } else {
                     ranTasks = runAllTasks(0); // This will run the minimum number of tasks
@@ -652,7 +652,7 @@ public final class NioEventLoop extends SingleThreadEventLoop { /* 事件循环�
             final Object a = k.attachment();
 
             if (a instanceof AbstractNioChannel) {
-                processSelectedKey(k, (AbstractNioChannel) a);
+                processSelectedKey(k, (AbstractNioChannel) a); /* 处理Channel 连接 读写 事件 */
             } else {
                 @SuppressWarnings("unchecked")
                 NioTask<SelectableChannel> task = (NioTask<SelectableChannel>) a;
@@ -716,7 +716,7 @@ public final class NioEventLoop extends SingleThreadEventLoop { /* 事件循环�
             // Also check for readOps of 0 to workaround possible JDK bug which may otherwise lead
             // to a spin loop
             if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {
-                unsafe.read();
+                unsafe.read();/* ServerSocketChannel处理连接事件 - NioMessageUnsafe           /////////  客户端Channel处理读写事件 -- NioByteUnsafe  */
             }
         } catch (CancelledKeyException ignored) {
             unsafe.close(unsafe.voidPromise());

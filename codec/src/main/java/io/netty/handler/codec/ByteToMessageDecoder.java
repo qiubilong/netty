@@ -94,7 +94,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                     // - cumulation cannot be resized to accommodate the additional data
                     // - cumulation can be expanded with a reallocation operation to accommodate but the buffer is
                     //   assumed to be shared (e.g. refCnt() > 1) and the reallocation may not be safe.
-                    return expandCumulation(alloc, cumulation, in);
+                    return expandCumulation(alloc, cumulation, in);/* 合并ByteBuf */
                 }
                 cumulation.writeBytes(in, in.readerIndex(), required);
                 in.readerIndex(in.writerIndex());
@@ -151,8 +151,8 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
     private static final byte STATE_CALLING_CHILD_DECODE = 1;
     private static final byte STATE_HANDLER_REMOVED_PENDING = 2;
 
-    ByteBuf cumulation;
-    private Cumulator cumulator = MERGE_CUMULATOR;
+    ByteBuf cumulation;    /* 未读取完毕的 暂存数据*/
+    private Cumulator cumulator = MERGE_CUMULATOR; /* 合并旧数据缓存 */
     private boolean singleDecode;
     private boolean first;
 
@@ -271,7 +271,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             CodecOutputList out = CodecOutputList.newInstance();
             try {
                 first = cumulation == null;
-                cumulation = cumulator.cumulate(ctx.alloc(),
+                cumulation = cumulator.cumulate(ctx.alloc(),/* 合并ByteBuf */
                         first ? Unpooled.EMPTY_BUFFER : cumulation, (ByteBuf) msg);
                 callDecode(ctx, cumulation, out);
             } catch (DecoderException e) {
@@ -429,7 +429,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 final int outSize = out.size();
 
                 if (outSize > 0) {
-                    fireChannelRead(ctx, out, outSize);
+                    fireChannelRead(ctx, out, outSize);/* 解码成功后，继续向下个ChannelHandler传递 */
                     out.clear();
 
                     // Check if this handler was removed before continuing with decoding.
@@ -443,7 +443,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 }
 
                 int oldInputLength = in.readableBytes();
-                decodeRemovalReentryProtection(ctx, in, out);
+                decodeRemovalReentryProtection(ctx, in, out);/* 进行解码 */
 
                 // Check if this handler was removed before continuing the loop.
                 // If it was removed, it is not safe to continue to operate on the buffer.
@@ -531,7 +531,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
         }
     }
 
-    static ByteBuf expandCumulation(ByteBufAllocator alloc, ByteBuf oldCumulation, ByteBuf in) {
+    static ByteBuf expandCumulation(ByteBufAllocator alloc, ByteBuf oldCumulation, ByteBuf in) { /* 合并ByteBuf */
         int oldBytes = oldCumulation.readableBytes();
         int newBytes = in.readableBytes();
         int totalBytes = oldBytes + newBytes;

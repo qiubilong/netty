@@ -52,7 +52,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     private final Map<AttributeKey<?>, Object> childAttrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
     private final ServerBootstrapConfig config = new ServerBootstrapConfig(this);
     private volatile EventLoopGroup childGroup;    /*  worker工作线程组  */
-    private volatile ChannelHandler childHandler;  /*  客户端Channel通道建立后，回调ChannelHandler，用户初始化channel的pipeLine */
+    private volatile ChannelHandler childHandler;  /*  客户端Channel通道建立后，回调ChannelInitializer，用户初始化channel的pipeLine */
 
     public ServerBootstrap() { }
 
@@ -206,13 +206,13 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             final Channel child = (Channel) msg;
 
-            child.pipeline().addLast(childHandler);
+            child.pipeline().addLast(childHandler); /* 1、添加客户端Channel自定义初始化ChannelInitializer */
 
-            setChannelOptions(child, childOptions, logger);
+            setChannelOptions(child, childOptions, logger); //TCP控制选项
             setAttributes(child, childAttrs);
 
             try {
-                childGroup.register(child).addListener(new ChannelFutureListener() {
+                childGroup.register(child).addListener(new ChannelFutureListener() {/* 2、绑定Work线程 和其 NIO多路复用器Selector */
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
                         if (!future.isSuccess()) {

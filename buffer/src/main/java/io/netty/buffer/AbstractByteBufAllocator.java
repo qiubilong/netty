@@ -137,7 +137,7 @@ public abstract class AbstractByteBufAllocator implements ByteBufAllocator {
     @Override
     public ByteBuf ioBuffer(int initialCapacity) {
         if (PlatformDependent.hasUnsafe() || isDirectBufferPooled()) {
-            return directBuffer(initialCapacity);
+            return directBuffer(initialCapacity);/* 使用直接内存 */
         }
         return heapBuffer(initialCapacity);
     }

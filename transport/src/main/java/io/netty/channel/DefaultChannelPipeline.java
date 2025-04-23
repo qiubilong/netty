@@ -916,7 +916,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
 
     @Override
     public final ChannelPipeline fireChannelRead(Object msg) {
-        AbstractChannelHandlerContext.invokeChannelRead(head, msg);
+        AbstractChannelHandlerContext.invokeChannelRead(head, msg);/* 从管道头部的Handler开始通知 客户端Channel建立消息 */
         return this;
     }
 
@@ -1364,12 +1364,12 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
 
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-            unsafe.write(msg, promise);
+            unsafe.write(msg, promise); /* 写数据到outboundBuffer缓存区 -- NioSocketChannelUnsafe */
         }
 
         @Override
         public void flush(ChannelHandlerContext ctx) {
-            unsafe.flush();
+            unsafe.flush();      /* 刷新outboundBuffer缓存区 到 SoccketChanel */
         }
 
         @Override

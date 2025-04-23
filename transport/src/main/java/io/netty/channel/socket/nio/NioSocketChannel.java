@@ -347,7 +347,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
     protected int doReadBytes(ByteBuf byteBuf) throws Exception {
         final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
         allocHandle.attemptedBytesRead(byteBuf.writableBytes());
-        return byteBuf.writeBytes(javaChannel(), allocHandle.attemptedBytesRead());
+        return byteBuf.writeBytes(javaChannel(), allocHandle.attemptedBytesRead());/* 读取JDK NIO SocketChannl数据 */
     }
 
     @Override
@@ -405,9 +405,9 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                     // to check if the total size of all the buffers is non-zero.
                     ByteBuffer buffer = nioBuffers[0];
                     int attemptedBytes = buffer.remaining();
-                    final int localWrittenBytes = ch.write(buffer);
+                    final int localWrittenBytes = ch.write(buffer);/* 写数据到SocketChannel */
                     if (localWrittenBytes <= 0) {
-                        incompleteWrite(true);
+                        incompleteWrite(true);/* SocketChannel写缓冲区已满，注册监听可写事件 - interestOps & SelectionKey.OP_WRITE */
                         return;
                     }
                     adjustMaxBytesPerGatheringWrite(attemptedBytes, localWrittenBytes, maxBytesPerGatheringWrite);
@@ -435,7 +435,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
             }
         } while (writeSpinCount > 0);
 
-        incompleteWrite(writeSpinCount < 0);
+        incompleteWrite(writeSpinCount < 0);/* 继续监听可写事件 - interestOps & SelectionKey.OP_WRITE  */
     }
 
     @Override

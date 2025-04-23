@@ -714,7 +714,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     private void invokeWrite0(Object msg, ChannelPromise promise) {
         try {
-            ((ChannelOutboundHandler) handler()).write(this, msg, promise);
+            ((ChannelOutboundHandler) handler()).write(this, msg, promise); /* HeadHandlerContext 写数据到 outBuf */
         } catch (Throwable t) {
             notifyOutboundHandlerException(t, promise);
         }
@@ -747,7 +747,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     private void invokeFlush0() {
         try {
-            ((ChannelOutboundHandler) handler()).flush(this);
+            ((ChannelOutboundHandler) handler()).flush(this); /* HeadContext - 刷新数据到SocketChannel */
         } catch (Throwable t) {
             invokeExceptionCaught(t);
         }
@@ -761,8 +761,8 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     void invokeWriteAndFlush(Object msg, ChannelPromise promise) {
         if (invokeHandler()) {
-            invokeWrite0(msg, promise);
-            invokeFlush0();
+            invokeWrite0(msg, promise); /* HeadContext - 写数据到缓存 */
+            invokeFlush0();/* HeadContext - 数据缓存刷新到SocketChannel */
         } else {
             writeAndFlush(msg, promise);
         }
