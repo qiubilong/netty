@@ -34,18 +34,18 @@ public interface ChannelInboundHandler extends ChannelHandler {
     /**
      * The {@link Channel} of the {@link ChannelHandlerContext} is now active
      */
-    void channelActive(ChannelHandlerContext ctx) throws Exception;
+    void channelActive(ChannelHandlerContext ctx) throws Exception;             /* 连接建立 */
 
     /**
      * The {@link Channel} of the {@link ChannelHandlerContext} was registered is now inactive and reached its
      * end of lifetime.
      */
-    void channelInactive(ChannelHandlerContext ctx) throws Exception;
+    void channelInactive(ChannelHandlerContext ctx) throws Exception;            /* 连接断开 */
 
     /**
      * Invoked when the current {@link Channel} has read a message from the peer.
      */
-    void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception;
+    void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception;     /* 数据处理 */
 
     /**
      * Invoked when the last message read by the current read operation has been consumed by
@@ -58,7 +58,7 @@ public interface ChannelInboundHandler extends ChannelHandler {
     /**
      * Gets called if an user event was triggered.
      */
-    void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception;
+    void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception; /* 事件触发 */
 
     /**
      * Gets called once the writable state of a {@link Channel} changed. You can check the state with
@@ -71,5 +71,5 @@ public interface ChannelInboundHandler extends ChannelHandler {
      */
     @Override
     @SuppressWarnings("deprecation")
-    void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception;
+    void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception;/* 异常触发 */
 }

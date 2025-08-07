@@ -31,8 +31,39 @@
 
   <properties>
     <japicmp.skip>true</japicmp.skip>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <java.version>1.8</java.version>
   </properties>
+
   <dependencies>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>RELEASE</version>
+      <scope>compile</scope>
+    </dependency>
+
+
+    <!-- protostuff依赖包 begin -->
+    <dependency>
+      <groupId>com.dyuproject.protostuff</groupId>
+      <artifactId>protostuff-api</artifactId>
+      <version>1.0.10</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dyuproject.protostuff</groupId>
+      <artifactId>protostuff-core</artifactId>
+      <version>1.0.10</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dyuproject.protostuff</groupId>
+      <artifactId>protostuff-runtime</artifactId>
+      <version>1.0.10</version>
+    </dependency>
+    <!-- protostuff依赖包 end -->
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>netty-common</artifactId>
@@ -193,6 +224,14 @@
             ${argLine.example}
             ${exampleClass}
           </commandlineArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>7</source>
+          <target>7</target>
         </configuration>
       </plugin>
     </plugins>
