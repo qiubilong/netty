@@ -50,7 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @param <C>   A sub-type of {@link Channel}
  */
-@Sharable
+@Sharable    /* 添加自定义handler */
 public abstract class ChannelInitializer<C extends Channel> extends ChannelInboundHandlerAdapter {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(ChannelInitializer.class);
@@ -109,7 +109,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
             // The good thing about calling initChannel(...) in handlerAdded(...) is that there will be no ordering
             // surprises if a ChannelInitializer will add another ChannelInitializer. This is as all handlers
             // will be added in the expected order.
-            if (initChannel(ctx)) { /* 执行自定义ChannelInitializer初始化回调  --> 添加自定义ChannelHandler */
+            if (initChannel(ctx)) { /* 执行 ChannelInitializer  --> 添加自定义ChannelHandler */
 
                 // We are done with init the Channel, removing the initializer now.
                 removeState(ctx);
@@ -126,7 +126,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     private boolean initChannel(ChannelHandlerContext ctx) throws Exception {
         if (initMap.add(ctx)) { // Guard against re-entrance.
             try {
-                initChannel((C) ctx.channel());/* 执行自定义ChannelInitializer初始化回调  --> 添加自定义ChannelHandler */
+                initChannel((C) ctx.channel());/* 1、执行 ChannelInitializer.initChannel（）  --> 添加自定义ChannelHandler */
             } catch (Throwable cause) {
                 // Explicitly call exceptionCaught(...) as we removed the handler before calling initChannel(...).
                 // We do so to prevent multiple calls to initChannel(...).
@@ -134,7 +134,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
             } finally {
                 ChannelPipeline pipeline = ctx.pipeline();
                 if (pipeline.context(this) != null) {
-                    pipeline.remove(this);/* 移除 自定义ChannelInitializer初始化回调 */
+                    pipeline.remove(this);/* 2、 移除 ChannelInitializer */
                 }
             }
             return true;

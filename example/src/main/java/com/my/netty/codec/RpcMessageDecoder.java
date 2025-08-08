@@ -67,7 +67,7 @@ public class RpcMessageDecoder extends ByteToMessageDecoder {
             RpcMessage rpcMessage = new RpcMessage() ;
             rpcMessage.setLen(length).setType(type).setContent(content);
             //log.info("RpcMessageDecoder rpc message={}",rpcMessage);
-            out.add(rpcMessage);/* 传递到下一个Handler */
+            out.add(rpcMessage);/* 解码成功， 传递到下一个Handler */
 
             this.type = 0;
             this.length = 0;

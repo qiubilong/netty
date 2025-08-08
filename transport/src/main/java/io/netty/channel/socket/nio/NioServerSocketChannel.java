@@ -72,7 +72,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
      * Create a new instance
      */
     public NioServerSocketChannel() {
-        this(newSocket(DEFAULT_SELECTOR_PROVIDER)); /* 实例化JDK NIO ServerSocketChannel并注册Accept事件 以及 管道PipeLine */
+        this(newSocket(DEFAULT_SELECTOR_PROVIDER)); /* 实例化JDK NIO ServerSocketChannel 并注册Accept事件 以及 管道PipeLine */
     }
 
     /**

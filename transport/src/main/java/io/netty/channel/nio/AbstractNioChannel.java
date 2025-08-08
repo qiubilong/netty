@@ -377,7 +377,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         boolean selected = false;
         for (;;) {
             try {
-                selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this); /* 多路复用器中注册监听channel */
+                selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this); /* 多路复用器中 注册监听channel */
                 return;
             } catch (CancelledKeyException e) {
                 if (!selected) {

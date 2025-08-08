@@ -71,7 +71,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     protected AbstractChannel(Channel parent) {
         this.parent = parent;
         id = newId();
-        unsafe = newUnsafe();
+        unsafe = newUnsafe(); /* NioMessageUnsafe */
         pipeline = newChannelPipeline(); /* 创建Channel管道 - DefaultChannelPipeline */
     }
 
@@ -477,7 +477,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             AbstractChannel.this.eventLoop = eventLoop; /* 绑定事件循环处理线程 EventLoop */
 
             if (eventLoop.inEventLoop()) {
-                register0(promise); /* Channel注册NIO多路复用selector，执行自定义ChannelInitializer初始化回调 */
+                register0(promise); /* Channel注册NIO多路复用selector，执行ChannelInitializer */
             } else {
                 try {
                     eventLoop.execute(new Runnable() {
@@ -514,7 +514,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 pipeline.invokeHandlerAddedIfNeeded();/* 2、执行自定义ChannelInitializer初始化回调 --> 添加自定义ChannelHandler */
 
                 safeSetSuccess(promise);
-                pipeline.fireChannelRegistered(); /* 3、ChannelIO注册多路复用selector，成功通知 */
+                pipeline.fireChannelRegistered(); /* 3、通知 注册selector 成功 */
                 // Only fire a channelActive if the channel has never been registered. This prevents firing
                 // multiple channel actives if the channel is deregistered and re-registered.
                 if (isActive()) {

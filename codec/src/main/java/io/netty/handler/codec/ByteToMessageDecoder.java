@@ -271,9 +271,9 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             CodecOutputList out = CodecOutputList.newInstance();
             try {
                 first = cumulation == null;
-                cumulation = cumulator.cumulate(ctx.alloc(),/* 合并ByteBuf */
+                cumulation = cumulator.cumulate(ctx.alloc(),/* 1、合并旧的 剩余未读取的 ByteBuf */
                         first ? Unpooled.EMPTY_BUFFER : cumulation, (ByteBuf) msg);
-                callDecode(ctx, cumulation, out);
+                callDecode(ctx, cumulation, out); /* 2、尝试字节流解码 */
             } catch (DecoderException e) {
                 throw e;
             } catch (Exception e) {
@@ -293,7 +293,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
 
                     int size = out.size();
                     firedChannelRead |= out.insertSinceRecycled();
-                    fireChannelRead(ctx, out, size);
+                    fireChannelRead(ctx, out, size); /* 向下一个 InboundHandler传递消息 */
                 } finally {
                     out.recycle();
                 }
@@ -429,7 +429,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 final int outSize = out.size();
 
                 if (outSize > 0) {
-                    fireChannelRead(ctx, out, outSize);/* 解码成功后，继续向下个ChannelHandler传递 */
+                    fireChannelRead(ctx, out, outSize);/* 2、解码成功后，继续向下个ChannelHandler传递 */
                     out.clear();
 
                     // Check if this handler was removed before continuing with decoding.
@@ -443,7 +443,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 }
 
                 int oldInputLength = in.readableBytes();
-                decodeRemovalReentryProtection(ctx, in, out);/* 进行解码 */
+                decodeRemovalReentryProtection(ctx, in, out);/* 1、进行解码 */
 
                 // Check if this handler was removed before continuing the loop.
                 // If it was removed, it is not safe to continue to operate on the buffer.
@@ -453,7 +453,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                     break;
                 }
 
-                if (out.isEmpty()) {
+                if (out.isEmpty()) { /* 3、字节流不够解码，退出循环 */
                     if (oldInputLength == in.readableBytes()) {
                         break;
                     } else {

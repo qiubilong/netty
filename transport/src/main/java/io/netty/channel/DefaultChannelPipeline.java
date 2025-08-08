@@ -81,7 +81,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
      * Thus full iterations to do insertions is assumed to be a good compromised to saving memory and tail management
      * complexity.
      */
-    private PendingHandlerCallback pendingHandlerCallbackHead;
+    private PendingHandlerCallback pendingHandlerCallbackHead; /* ChanelPipe.addLast 添加 ChannelInitialize 时，实例化 PendingHandlerAddedTask */
 
     /**
      * Set to {@code true} once the {@link AbstractChannel} is registered.Once set to {@code true} the value will never
@@ -210,7 +210,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
             // ChannelHandler.handlerAdded(...) once the channel is registered.
             if (!registered) {
                 newCtx.setAddPending();
-                callHandlerCallbackLater(newCtx, true);
+                callHandlerCallbackLater(newCtx, true); /* 实例化 执行 ChannelInitialize 任务 PendingHandlerAddedTask */
                 return this;
             }
 
@@ -606,7 +606,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
 
     private void callHandlerAdded0(final AbstractChannelHandlerContext ctx) {
         try {
-            ctx.callHandlerAdded();/* 执行初始化InitChannel回调 */
+            ctx.callHandlerAdded();/* 执行 ChannelInitialize.initChannel() 回调，添加自定义Handler */
         } catch (Throwable t) {
             boolean removed = false;
             try {
@@ -641,7 +641,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
         }
     }
 
-    final void invokeHandlerAddedIfNeeded() {
+    final void invokeHandlerAddedIfNeeded() { /* 添加自定义Handler */
         assert channel.eventLoop().inEventLoop();
         if (firstRegistration) {
             firstRegistration = false;

@@ -307,8 +307,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
-            channel = channelFactory.newChannel(); /* ReflectiveChannelFactory 创建 NioServerSocketChannel（ServerSocketChannel） or （NioSocketChannel）SocketChannel */
-            init(channel);/* 初始化Channel，添加自定义ChannelInitializer */
+            channel = channelFactory.newChannel(); /* 1、ReflectiveChannelFactory 创建 NioServerSocketChannel（ServerSocketChannel） or （NioSocketChannel）SocketChannel */
+            init(channel);/* 2、初始化Channel，添加自定义ChannelInitializer（入站Handler） -- ServerBootStrap 为了添加 入站Handler ServerBootstrapAcceptor */
         } catch (Throwable t) {
             if (channel != null) {
                 // channel can be null if newChannel crashed (eg SocketException("too many open files"))
