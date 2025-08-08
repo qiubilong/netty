@@ -52,7 +52,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     private final Map<AttributeKey<?>, Object> childAttrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
     private final ServerBootstrapConfig config = new ServerBootstrapConfig(this);
     private volatile EventLoopGroup childGroup;    /*  worker工作线程组  */
-    private volatile ChannelHandler childHandler;  /*  客户端Channel通道建立后，回调ChannelInitializer，用户初始化channel的pipeLine */
+    private volatile ChannelHandler childHandler;  /*  客户端Channel通道建立后，回调ChannelInitializer（入站handler），用户初始化channel的pipeLine */
 
     public ServerBootstrap() { }
 
@@ -144,14 +144,14 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             public void initChannel(final Channel ch) {
                 final ChannelPipeline pipeline = ch.pipeline();
                 ChannelHandler handler = config.handler();
-                if (handler != null) {//handler==null
+                if (handler != null) {//这里 handler==null
                     pipeline.addLast(handler);
                 }
 
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
-                        pipeline.addLast(new ServerBootstrapAcceptor(
+                        pipeline.addLast(new ServerBootstrapAcceptor(  /* 给客户端分配 事件循环线程 */
                                 ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }
                 });

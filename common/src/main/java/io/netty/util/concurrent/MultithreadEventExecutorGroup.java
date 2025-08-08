@@ -36,7 +36,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
     private final Set<EventExecutor> readonlyChildren;
     private final AtomicInteger terminatedChildren = new AtomicInteger();
     private final Promise<?> terminationFuture = new DefaultPromise(GlobalEventExecutor.INSTANCE);
-    private final EventExecutorChooserFactory.EventExecutorChooser chooser; /* 线程选择器 - PowerOfTwoEventExecutorChooser */
+    private final EventExecutorChooserFactory.EventExecutorChooser chooser; /* 线程选择器 - PowerOfTwoEventExecutorChooser - 递增取模 - 轮训 */
 
     /**
      * Create a new instance.
@@ -73,7 +73,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         checkPositive(nThreads, "nThreads");
 
         if (executor == null) {
-            executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());/* 默认任务执行器，一个任务一个线程 */
+            executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());/* 默认任务执行器，创建事件循环线程 */
         }
 
         children = new EventExecutor[nThreads];        /* 创建 EventLoop线程组 */
