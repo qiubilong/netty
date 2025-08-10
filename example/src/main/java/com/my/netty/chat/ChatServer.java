@@ -32,7 +32,7 @@ public class ChatServer {
             serverBootstrap.channel(NioServerSocketChannel.class)
                     .option(ChannelOption.SO_REUSEADDR, true)
                     .option(ChannelOption.SO_BACKLOG,128);
-
+            /* ChannelInitializer 本质是一个 InboundHandler */
             serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() { /* 客户端Channel建立后，（注册到IO多路复用器），回调管道初始化 ChannelInitializer */
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {

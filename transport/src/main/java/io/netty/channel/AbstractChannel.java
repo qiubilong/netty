@@ -44,9 +44,9 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(AbstractChannel.class);
 
-    private final Channel parent;
+    private final Channel parent; /* 服务端 serverSocketChanel */
     private final ChannelId id;
-    private final Unsafe unsafe;
+    private final Unsafe unsafe;  /* 服务端 - NioMessageUnsafe  ######     客户端 - NioByteUnsafe     */
     private final DefaultChannelPipeline pipeline; /* Channel管道 -- DefaultChannelPipeline  */
     private final VoidChannelPromise unsafeVoidPromise = new VoidChannelPromise(this, false);
     private final CloseFuture closeFuture = new CloseFuture(this);
@@ -71,7 +71,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     protected AbstractChannel(Channel parent) {
         this.parent = parent;
         id = newId();
-        unsafe = newUnsafe(); /* NioMessageUnsafe */
+        unsafe = newUnsafe(); /* 服务端 - AbstractNioMessageChannel.NioMessageUnsafe */
         pipeline = newChannelPipeline(); /* 创建Channel管道 - DefaultChannelPipeline */
     }
 
@@ -267,7 +267,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
     @Override
     public ChannelFuture connect(SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
-        return pipeline.connect(remoteAddress, localAddress, promise);
+        return pipeline.connect(remoteAddress, localAddress, promise);/* 与服务端建立连接 */
     }
 
     @Override
@@ -461,7 +461,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             return remoteAddress0();
         }
 
-        @Override
+        @Override /* 绑定事件循环线程 & 注册到多路复用器 */
         public final void register(EventLoop eventLoop, final ChannelPromise promise) {
             ObjectUtil.checkNotNull(eventLoop, "eventLoop");
             if (isRegistered()) {
@@ -474,7 +474,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 return;
             }
 
-            AbstractChannel.this.eventLoop = eventLoop; /* 绑定事件循环处理线程 EventLoop */
+            AbstractChannel.this.eventLoop = eventLoop; /* 绑定 事件循环处理线程 EventLoop */
 
             if (eventLoop.inEventLoop()) {
                 register0(promise); /* Channel注册NIO多路复用selector，执行ChannelInitializer */
@@ -511,15 +511,15 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
                 // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
                 // user may already fire events through the pipeline in the ChannelFutureListener.
-                pipeline.invokeHandlerAddedIfNeeded();/* 2、执行自定义ChannelInitializer初始化回调 --> 添加自定义ChannelHandler */
+                pipeline.invokeHandlerAddedIfNeeded();/* 2、执行 ChannelInitializer.initChannel  --> 添加自定义ChannelHandler */
 
                 safeSetSuccess(promise);
-                pipeline.fireChannelRegistered(); /* 3、通知 注册selector 成功 */
+                pipeline.fireChannelRegistered();     /* 3、注册selector 成功通知  */
                 // Only fire a channelActive if the channel has never been registered. This prevents firing
                 // multiple channel actives if the channel is deregistered and re-registered.
                 if (isActive()) {
                     if (firstRegistration) {
-                        pipeline.fireChannelActive();
+                        pipeline.fireChannelActive(); /* 4、Channel建立 成功通知  */
                     } else if (config().isAutoRead()) {
                         // This channel was registered before and autoRead() is set. This means we need to begin read
                         // again so that we process inbound data.

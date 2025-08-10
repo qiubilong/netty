@@ -914,7 +914,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
         return this;
     }
 
-    @Override
+    @Override /* 传播数据 */
     public final ChannelPipeline fireChannelRead(Object msg) {
         AbstractChannelHandlerContext.invokeChannelRead(head, msg);/* 从管道头部的Handler开始通知 客户端Channel建立消息 */
         return this;
@@ -1093,7 +1093,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
             return ctx;
         }
     }
-
+    /* 执行 ChannelInitialer，管道添加自定义 ChannelHandler */
     private void callHandlerAddedForAllHandlers() {
         final PendingHandlerCallback pendingHandlerCallbackHead;
         synchronized (this) {
@@ -1339,7 +1339,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
                 ChannelHandlerContext ctx,
                 SocketAddress remoteAddress, SocketAddress localAddress,
                 ChannelPromise promise) {
-            unsafe.connect(remoteAddress, localAddress, promise);
+            unsafe.connect(remoteAddress, localAddress, promise);/* 与服务端建立连接 */
         }
 
         @Override
@@ -1369,7 +1369,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
 
         @Override
         public void flush(ChannelHandlerContext ctx) {
-            unsafe.flush();      /* 刷新outboundBuffer缓存区 到 SoccketChanel */
+            unsafe.flush();      /* 刷新outboundBuffer缓存区 到 SocketChanel */
         }
 
         @Override
@@ -1395,7 +1395,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
 
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
-            ctx.fireChannelActive();
+            ctx.fireChannelActive(); /* 传播通道建立通知 */
 
             readIfIsAutoRead();
         }
@@ -1460,7 +1460,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
         void execute() {
             EventExecutor executor = ctx.executor();//channel绑定线程
             if (executor.inEventLoop()) {
-                callHandlerAdded0(ctx);/* 执行初始化InitChannel回调 */
+                callHandlerAdded0(ctx);/* 执行 ChannelInitializer */
             } else {
                 try {
                     executor.execute(this);

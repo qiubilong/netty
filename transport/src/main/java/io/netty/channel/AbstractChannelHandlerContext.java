@@ -88,7 +88,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     private final DefaultChannelPipeline pipeline; /* 管道容器 */
     private final String name; /* ChannelHandler处理器名字 */
     private final boolean ordered;
-    private final int executionMask;
+    private final int executionMask; /* handler可处理事件 */
 
     // Will be set to null if no child executor should be used, otherwise it will be set to the
     // child executor.
@@ -352,9 +352,9 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         }
     }
 
-    @Override
+    @Override                    /* 传播数据 */
     public ChannelHandlerContext fireChannelRead(final Object msg) {
-        invokeChannelRead(findContextInbound(MASK_CHANNEL_READ), msg);
+        invokeChannelRead(findContextInbound(MASK_CHANNEL_READ), msg);/* 寻找下一个 入站&处理数据  的 Handler */
         return this;
     }
 
@@ -362,7 +362,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         final Object m = next.pipeline.touch(ObjectUtil.checkNotNull(msg, "msg"), next);
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
-            next.invokeChannelRead(m);
+            next.invokeChannelRead(m); /* 传播数据 */
         } else {
             executor.execute(new Runnable() {
                 @Override
@@ -935,7 +935,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         // We must call setAddComplete before calling handlerAdded. Otherwise if the handlerAdded method generates
         // any pipeline events ctx.handler() will miss them because the state will not allow it.
         if (setAddComplete()) {
-            handler().handlerAdded(this);/* 执行自定义ChannelInitializer初始化回调 --> 添加自定义ChannelHandler   ( ServerBootStrap中添加 ) */
+            handler().handlerAdded(this);/* ChannelInitializer.handlerAdded --> 添加自定义ChannelHandler   ( ServerBootStrap中添加 ) */
         }
     }
 

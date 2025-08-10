@@ -65,7 +65,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     // purposes.
     private final Map<ChannelOption<?>, Object> options = new LinkedHashMap<ChannelOption<?>, Object>(); /* TCP选项 */
     private final Map<AttributeKey<?>, Object> attrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
-    private volatile ChannelHandler handler;
+    private volatile ChannelHandler handler;  /* 客户端 - pipeLine自定义初始化 */
 
     AbstractBootstrap() {
         // Disallow extending from a different package.

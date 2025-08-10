@@ -78,7 +78,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
      */
     protected AbstractNioChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
         super(parent); /* 创建Channel管道PipeLine */
-        this.ch = ch; // JDK原生 NIO SocketChannel
+        this.ch = ch; /* JDK原生 NIO SocketChannel */
         this.readInterestOp = readInterestOp;
         try {
             ch.configureBlocking(false);/* 设置JDK NIO SocketChannel 非阻塞模式 */
@@ -245,8 +245,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 }
 
                 boolean wasActive = isActive();
-                if (doConnect(remoteAddress, localAddress)) {
-                    fulfillConnectPromise(promise, wasActive);
+                if (doConnect(remoteAddress, localAddress)) {/* 与服务端建立连接 */
+                    fulfillConnectPromise(promise, wasActive);/* 连接成功，通知  */
                 } else {
                     connectPromise = promise;
                     requestedRemoteAddress = remoteAddress;
@@ -302,7 +302,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             // Regardless if the connection attempt was cancelled, channelActive() event should be triggered,
             // because what happened is what happened.
             if (!wasActive && active) {
-                pipeline().fireChannelActive();
+                pipeline().fireChannelActive();/* 与服务端建立连接，通知  */
             }
 
             // If a user cancelled the connection attempt, close the channel, which is followed by channelInactive().
@@ -372,7 +372,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         return loop instanceof NioEventLoop;
     }
 
-    @Override
+    @Override   /* 注册多路复用器 */
     protected void doRegister() throws Exception {
         boolean selected = false;
         for (;;) {

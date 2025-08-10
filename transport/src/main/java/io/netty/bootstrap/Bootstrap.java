@@ -136,7 +136,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> { /* 客户
     public ChannelFuture connect(SocketAddress remoteAddress) {
         ObjectUtil.checkNotNull(remoteAddress, "remoteAddress");
         validate();
-        return doResolveAndConnect(remoteAddress, config.localAddress());
+        return doResolveAndConnect(remoteAddress, config.localAddress()); /* 与服务端建立连接 */
     }
 
     /**
@@ -152,7 +152,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> { /* 客户
      * @see #connect()
      */
     private ChannelFuture doResolveAndConnect(final SocketAddress remoteAddress, final SocketAddress localAddress) {
-        final ChannelFuture regFuture = initAndRegister();
+        final ChannelFuture regFuture = initAndRegister(); /* 1、创建客户端Channel & 绑定事件循环线程 & 注册到多路复用器 */
         final Channel channel = regFuture.channel();
 
         if (regFuture.isDone()) {
@@ -214,7 +214,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> { /* 客户
                     promise.setFailure(resolveFailureCause);
                 } else {
                     // Succeeded to resolve immediately; cached? (or did a blocking lookup)
-                    doConnect(resolveFuture.getNow(), localAddress, promise);
+                    doConnect(resolveFuture.getNow(), localAddress, promise);/* 与服务端建立连接 */
                 }
                 return promise;
             }
@@ -249,7 +249,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> { /* 客户
                 if (localAddress == null) {
                     channel.connect(remoteAddress, connectPromise);
                 } else {
-                    channel.connect(remoteAddress, localAddress, connectPromise);
+                    channel.connect(remoteAddress, localAddress, connectPromise);/* 与服务端建立连接 */
                 }
                 connectPromise.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
             }
@@ -259,7 +259,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> { /* 客户
     @Override
     void init(Channel channel) {
         ChannelPipeline p = channel.pipeline();
-        p.addLast(config.handler());
+        p.addLast(config.handler()); /* 客户端侧 - 管道自定义 */
 
         setChannelOptions(channel, newOptionsArray(), logger);
         setAttributes(channel, newAttributesArray());

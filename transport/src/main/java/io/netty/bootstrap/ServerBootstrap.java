@@ -53,7 +53,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     private final ServerBootstrapConfig config = new ServerBootstrapConfig(this);
     private volatile EventLoopGroup childGroup;    /*  worker工作线程组  */
     private volatile ChannelHandler childHandler;  /*  客户端Channel通道建立后，回调ChannelInitializer（入站handler），用户初始化channel的pipeLine */
-
+                                                   /* 初始化客户端Channel PipeLine Handler */
     public ServerBootstrap() { }
 
     private ServerBootstrap(ServerBootstrap bootstrap) {
@@ -84,7 +84,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         if (this.childGroup != null) {
             throw new IllegalStateException("childGroup set already");
         }
-        this.childGroup = ObjectUtil.checkNotNull(childGroup, "childGroup"); /* 设置工作线程组 */
+        this.childGroup = ObjectUtil.checkNotNull(childGroup, "childGroup"); /* 设置 客户端 工作线程组 */
         return this;
     }
 
@@ -128,7 +128,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     }
 
     @Override
-    void init(Channel channel) { /* 初始化服务端 NioServerSocketChannel --> JDK ServerSocketChannel */
+    void init(Channel channel) { /* 服务端侧 - 管道自定义 NioServerSocketChannel --> JDK ServerSocketChannel */
         setChannelOptions(channel, newOptionsArray(), logger);
         setAttributes(channel, newAttributesArray());
 
@@ -171,7 +171,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         }
         return this;
     }
-
+    /* 客户端 pipeLine 添加自定义Handler ， 绑定事件循环线程和多路复用器 */
     private static class ServerBootstrapAcceptor extends ChannelInboundHandlerAdapter {
 
         private final EventLoopGroup childGroup;

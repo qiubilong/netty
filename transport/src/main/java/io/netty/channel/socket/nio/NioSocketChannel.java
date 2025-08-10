@@ -101,7 +101,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
      * @param parent    the {@link Channel} which created this instance or {@code null} if it was created by the user
      * @param socket    the {@link SocketChannel} which will be used
      */
-    public NioSocketChannel(Channel parent, SocketChannel socket) {
+    public NioSocketChannel(Channel parent, SocketChannel socket) { /* 客户端 Channel */
         super(parent, socket);
         config = new NioSocketChannelConfig(this, socket.socket());
     }
@@ -312,7 +312,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
         boolean success = false;
         try {
-            boolean connected = SocketUtils.connect(javaChannel(), remoteAddress);
+            boolean connected = SocketUtils.connect(javaChannel(), remoteAddress);/* 与服务端建立连接 */
             if (!connected) {
                 selectionKey().interestOps(SelectionKey.OP_CONNECT);
             }
