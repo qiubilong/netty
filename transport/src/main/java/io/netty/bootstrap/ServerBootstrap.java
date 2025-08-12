@@ -51,9 +51,9 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     private final Map<ChannelOption<?>, Object> childOptions = new LinkedHashMap<ChannelOption<?>, Object>();
     private final Map<AttributeKey<?>, Object> childAttrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
     private final ServerBootstrapConfig config = new ServerBootstrapConfig(this);
-    private volatile EventLoopGroup childGroup;    /*  worker工作线程组  */
-    private volatile ChannelHandler childHandler;  /*  客户端Channel通道建立后，回调ChannelInitializer（入站handler），用户初始化channel的pipeLine */
-                                                   /* 初始化客户端Channel PipeLine Handler */
+    private volatile EventLoopGroup childGroup;    /*  io读写 worker工作线程组  */
+    private volatile ChannelHandler childHandler;  /*  客户端Channel通道/pipeLine 初始化 */
+
     public ServerBootstrap() { }
 
     private ServerBootstrap(ServerBootstrap bootstrap) {
@@ -80,11 +80,11 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
      * {@link Channel}'s.
      */
     public ServerBootstrap group(EventLoopGroup parentGroup, EventLoopGroup childGroup) {
-        super.group(parentGroup); /* 设置boss工作线程组，负责接收客户端连接 */
+        super.group(parentGroup); /* boss工作线程组，负责接收客户端连接 */
         if (this.childGroup != null) {
             throw new IllegalStateException("childGroup set already");
         }
-        this.childGroup = ObjectUtil.checkNotNull(childGroup, "childGroup"); /* 设置 客户端 工作线程组 */
+        this.childGroup = ObjectUtil.checkNotNull(childGroup, "childGroup"); /* 客户端 io读写-工作线程组 */
         return this;
     }
 

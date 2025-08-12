@@ -519,7 +519,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 // multiple channel actives if the channel is deregistered and re-registered.
                 if (isActive()) {
                     if (firstRegistration) {
-                        pipeline.fireChannelActive(); /* 4、Channel建立 成功通知  */
+                        pipeline.fireChannelActive(); /* 4、服务侧 客户端Channel建立 成功通知 。 服务端 bind之后再发) */
                     } else if (config().isAutoRead()) {
                         // This channel was registered before and autoRead() is set. This means we need to begin read
                         // again so that we process inbound data.
@@ -536,7 +536,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
         }
 
-        @Override
+        @Override     /* 服务侧 -绑定端口 */
         public final void bind(final SocketAddress localAddress, final ChannelPromise promise) {
             assertEventLoop();
 

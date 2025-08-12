@@ -93,7 +93,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
 
                 int size = readBuf.size();
                 for (int i = 0; i < size; i ++) {
-                    readPending = false;                      /*  传播 NioSocketChannel消息 */
+                    readPending = false;                      /*  传播 NioSocketChannel对象 */
                     pipeline.fireChannelRead(readBuf.get(i));/* 2、客户端Channel建立通知 -- ServerBootstrapAcceptor --> 初始化客户端Channel自定义初始化 --> 绑定work线程和其NIO多路复用Selector   */
                 }
                 readBuf.clear();
