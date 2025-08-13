@@ -96,7 +96,7 @@ import java.util.concurrent.TimeUnit;
  * @see ReadTimeoutHandler
  * @see WriteTimeoutHandler
  */
-public class IdleStateHandler extends ChannelDuplexHandler {
+public class IdleStateHandler extends ChannelDuplexHandler { /* 通道空闲探测 */
     private static final long MIN_TIMEOUT_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
 
     // Not create a new ChannelFutureListener per write operation to reduce GC pressure.
@@ -254,16 +254,16 @@ public class IdleStateHandler extends ChannelDuplexHandler {
     }
 
     @Override
-    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception { /* 客户端通道 - 绑定事件循环处理线程 & 注册到多路复用器 */
         // Initialize early if channel is active already.
         if (ctx.channel().isActive()) {
-            initialize(ctx);
+            initialize(ctx);/* 启动 - 检查定时器 */
         }
         super.channelRegistered(ctx);
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) throws Exception { /* 客户端通道 - 准备完毕 */
         // This method will be invoked only if this handler was added
         // before channelActive() event is fired.  If a user adds this handler
         // after the channelActive() event, initialize() will be called by beforeAdd().
@@ -273,7 +273,7 @@ public class IdleStateHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        destroy();
+        destroy(); /* 客户端通道关闭 - 取消定时器 */
         super.channelInactive(ctx);
     }
 
@@ -321,7 +321,7 @@ public class IdleStateHandler extends ChannelDuplexHandler {
 
         lastReadTime = lastWriteTime = ticksInNanos();
         if (readerIdleTimeNanos > 0) {
-            readerIdleTimeout = schedule(ctx, new ReaderIdleTimeoutTask(ctx),
+            readerIdleTimeout = schedule(ctx, new ReaderIdleTimeoutTask(ctx),/* 启动 - 读空闲 - 检查定时器 */
                     readerIdleTimeNanos, TimeUnit.NANOSECONDS);
         }
         if (writerIdleTimeNanos > 0) {
@@ -352,7 +352,7 @@ public class IdleStateHandler extends ChannelDuplexHandler {
         state = 2;
 
         if (readerIdleTimeout != null) {
-            readerIdleTimeout.cancel(false);
+            readerIdleTimeout.cancel(false);/* 客户端通道关闭 - 取消 - 读空闲检查 - 定时器 */
             readerIdleTimeout = null;
         }
         if (writerIdleTimeout != null) {
@@ -491,10 +491,10 @@ public class IdleStateHandler extends ChannelDuplexHandler {
         protected void run(ChannelHandlerContext ctx) {
             long nextDelay = readerIdleTimeNanos;
             if (!reading) {
-                nextDelay -= ticksInNanos() - lastReadTime;
+                nextDelay -= ticksInNanos() - lastReadTime; /* nextDelay = readerIdleTimeNanos - (ticksInNanos - lastReadTime) */
             }
 
-            if (nextDelay <= 0) {
+            if (nextDelay <= 0) { /* 满足 读空闲 */
                 // Reader is idle - set a new timeout and notify the callback.
                 readerIdleTimeout = schedule(ctx, this, readerIdleTimeNanos, TimeUnit.NANOSECONDS);
 
@@ -503,7 +503,7 @@ public class IdleStateHandler extends ChannelDuplexHandler {
 
                 try {
                     IdleStateEvent event = newIdleStateEvent(IdleState.READER_IDLE, first);
-                    channelIdle(ctx, event);
+                    channelIdle(ctx, event); /* 传播 读空闲事件 */
                 } catch (Throwable t) {
                     ctx.fireExceptionCaught(t);
                 }

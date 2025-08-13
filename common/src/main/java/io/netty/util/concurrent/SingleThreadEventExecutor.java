@@ -430,7 +430,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         }
     }
 
-    /**
+     /**
      * What ever tasks are present in {@code taskQueue} when this method is invoked will be {@link Runnable#run()}.
      * @param taskQueue the task queue to drain.
      * @return {@code true} if at least {@link Runnable#run()} was called.
@@ -455,7 +455,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      * the tasks in the task queue and returns if it ran longer than {@code timeoutNanos}.
      */
     protected boolean runAllTasks(long timeoutNanos) {
-        fetchFromScheduledTaskQueue();
+        fetchFromScheduledTaskQueue(); /* 将 延迟任务 迁移到 任务队列 */
         Runnable task = pollTask();
         if (task == null) {
             afterRunningAllTasks();
@@ -466,7 +466,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         long runTasks = 0;
         long lastExecutionTime;
         for (;;) {
-            safeExecute(task);
+            safeExecute(task);/* 2、执行任务 */
 
             runTasks ++;
 
@@ -479,7 +479,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 }
             }
 
-            task = pollTask();
+            task = pollTask();/* 1、消费任务 */
             if (task == null) {
                 lastExecutionTime = ScheduledFutureTask.nanoTime();
                 break;
@@ -822,9 +822,9 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     private void execute(Runnable task, boolean immediate) {
         boolean inEventLoop = inEventLoop();
-        addTask(task);
+        addTask(task); /* 添加任务到队列 */
         if (!inEventLoop) {
-            startThread();
+            startThread(); /* 延迟创建 - 事件循环处理线程 */
             if (isShutdown()) {
                 boolean reject = false;
                 try {
@@ -941,7 +941,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
                 boolean success = false;
                 try {
-                    doStartThread();
+                    doStartThread(); /* 创建事件循环处理线程 */
                     success = true;
                 } finally {
                     if (!success) {
@@ -975,7 +975,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                thread = Thread.currentThread();
+                thread = Thread.currentThread();/* 创建事件循环处理线程 */
                 if (interrupted) {
                     thread.interrupt();
                 }
@@ -983,7 +983,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 boolean success = false;
                 updateLastExecutionTime();
                 try {
-                    SingleThreadEventExecutor.this.run();
+                    SingleThreadEventExecutor.this.run();/* 循环处理 事件 */
                     success = true;
                 } catch (Throwable t) {
                     logger.warn("Unexpected exception from an event executor: ", t);
