@@ -64,7 +64,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
     final AbstractChannelHandlerContext head; /* 管道 - 头部Handler */
     final AbstractChannelHandlerContext tail; /* 管道 - 头部Handler */
 
-    private final Channel channel;
+    private final Channel channel; /* 连接通道 */
     private final ChannelFuture succeededFuture;
     private final VoidChannelPromise voidPromise;
     private final boolean touch = ResourceLeakDetector.isEnabled();

@@ -92,7 +92,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     // Will be set to null if no child executor should be used, otherwise it will be set to the
     // child executor.
-    final EventExecutor executor;
+    final EventExecutor executor; /* pipeline 自定义线程，非IO事件循环线程。如果无自定义线程，就使用IO事件循环线程 */
     private ChannelFuture succeededFuture;
 
     // Lazily instantiated tasks used to trigger events to a handler with different executor.
@@ -127,7 +127,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     @Override
-    public EventExecutor executor() {
+    public EventExecutor executor() {/* 如果无自定义线程，就使用IO事件循环线程  */
         if (executor == null) {
             return channel().eventLoop();
         } else {
@@ -360,7 +360,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     static void invokeChannelRead(final AbstractChannelHandlerContext next, Object msg) {
         final Object m = next.pipeline.touch(ObjectUtil.checkNotNull(msg, "msg"), next);
-        EventExecutor executor = next.executor();
+        EventExecutor executor = next.executor();//如果无自定义线程，就使用IO事件循环线程
         if (executor.inEventLoop()) {
             next.invokeChannelRead(m); /* 传播数据 */
         } else {
