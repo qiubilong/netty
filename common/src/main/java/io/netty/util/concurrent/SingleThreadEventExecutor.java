@@ -79,7 +79,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private volatile Thread thread;
     @SuppressWarnings("unused")
     private volatile ThreadProperties threadProperties;
-    private final Executor executor;      /* 异步任务执行器 */
+    private final Executor executor;      /* 异步任务执行器 - ThreadPerTaskExecutor */
     private volatile boolean interrupted;
 
     private final CountDownLatch threadLock = new CountDownLatch(1);
@@ -91,7 +91,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private long lastExecutionTime;
 
     @SuppressWarnings({ "FieldMayBeFinal", "unused" })
-    private volatile int state = ST_NOT_STARTED;
+    private volatile int state = ST_NOT_STARTED;//处理器状态
 
     private volatile long gracefulShutdownQuietPeriod;
     private volatile long gracefulShutdownTimeout;
@@ -164,11 +164,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     protected SingleThreadEventExecutor(EventExecutorGroup parent, Executor executor,
                                         boolean addTaskWakesUp, Queue<Runnable> taskQueue,
                                         RejectedExecutionHandler rejectedHandler) {
-        super(parent);
+        super(parent); /* 延迟任务队列 */
         this.addTaskWakesUp = addTaskWakesUp;
         this.maxPendingTasks = DEFAULT_MAX_PENDING_EXECUTOR_TASKS;
-        this.executor = ThreadExecutorMap.apply(executor, this);
-        this.taskQueue = ObjectUtil.checkNotNull(taskQueue, "taskQueue");
+        this.executor = ThreadExecutorMap.apply(executor, this); //ThreadPerTaskExecutor
+        this.taskQueue = ObjectUtil.checkNotNull(taskQueue, "taskQueue");//异步任务队列
         this.rejectedExecutionHandler = ObjectUtil.checkNotNull(rejectedHandler, "rejectedHandler");
     }
 
@@ -213,7 +213,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     protected static Runnable pollTaskFrom(Queue<Runnable> taskQueue) {
         for (;;) {
             Runnable task = taskQueue.poll();
-            if (task != WAKEUP_TASK) {
+            if (task != WAKEUP_TASK) {/* 忽略 优雅关机唤醒任务 */
                 return task;
             }
         }
@@ -474,12 +474,12 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             // XXX: Hard-coded value - will make it configurable if it is really a problem.
             if ((runTasks & 0x3F) == 0) {
                 lastExecutionTime = ScheduledFutureTask.nanoTime();
-                if (lastExecutionTime >= deadline) {
+                if (lastExecutionTime >= deadline) {//执行时间到期
                     break;
                 }
             }
 
-            task = pollTask();/* 1、消费任务 */
+            task = pollTask();/* 1、消费任务 - 忽略优雅关机唤醒任务 WAKEUP_TASK */
             if (task == null) {
                 lastExecutionTime = ScheduledFutureTask.nanoTime();
                 break;
@@ -623,7 +623,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         }
         ObjectUtil.checkNotNull(unit, "unit");
 
-        if (isShuttingDown()) {
+        if (isShuttingDown()) {//重复操作
             return terminationFuture();
         }
 
@@ -650,19 +650,19 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                         wakeup = false;
                 }
             }
-            if (STATE_UPDATER.compareAndSet(this, oldState, newState)) {
+            if (STATE_UPDATER.compareAndSet(this, oldState, newState)) {/* CAS更新 线程状态 */
                 break;
             }
         }
-        gracefulShutdownQuietPeriod = unit.toNanos(quietPeriod);
-        gracefulShutdownTimeout = unit.toNanos(timeout);
+        gracefulShutdownQuietPeriod = unit.toNanos(quietPeriod);//2s
+        gracefulShutdownTimeout = unit.toNanos(timeout);//15s
 
         if (ensureThreadStarted(oldState)) {
             return terminationFuture;
         }
 
         if (wakeup) {
-            taskQueue.offer(WAKEUP_TASK);
+            taskQueue.offer(WAKEUP_TASK);//唤醒线程
             if (!addTaskWakesUp) {
                 wakeup(inEventLoop);
             }
@@ -742,7 +742,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     /**
      * Confirm that the shutdown if the instance should be done now!
      */
-    protected boolean confirmShutdown() {
+    protected boolean confirmShutdown() {/* 无任务执行超过静默期2s，或者超过最大等待时间15s，退出循环 */
         if (!isShuttingDown()) {
             return false;
         }
@@ -751,14 +751,14 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             throw new IllegalStateException("must be invoked from an event loop");
         }
 
-        cancelScheduledTasks();
+        cancelScheduledTasks();/* 取消延迟任务 */
 
         if (gracefulShutdownStartTime == 0) {
             gracefulShutdownStartTime = ScheduledFutureTask.nanoTime();
         }
-
+        /* runAllTasks()=true --> 说明至少执行一个任务（非WAKEUP_TASK） */
         if (runAllTasks() || runShutdownHooks()) {
-            if (isShutdown()) {
+            if (isShutdown()) {//如果设置了强制关机，这里会立即关闭，会丢失任务，不建议
                 // Executor shut down - no new tasks anymore.
                 return true;
             }
@@ -769,16 +769,16 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             if (gracefulShutdownQuietPeriod == 0) {
                 return true;
             }
-            taskQueue.offer(WAKEUP_TASK);
+            taskQueue.offer(WAKEUP_TASK);/* 队列里还有任务，继续循环 */
             return false;
         }
 
         final long nanoTime = ScheduledFutureTask.nanoTime();
-
+        /* 队列里没有任务，关闭时间 超过 gracefulShutdownTimeout=15s，则关闭线程 */
         if (isShutdown() || nanoTime - gracefulShutdownStartTime > gracefulShutdownTimeout) {
             return true;
         }
-
+        /* 队列里没有任务，关闭时间 未超过 gracefulShutdownTimeout=15s，但任务执行点<2s ,则继续等待一会 */
         if (nanoTime - lastExecutionTime <= gracefulShutdownQuietPeriod) {
             // Check if any tasks were added to the queue every 100ms.
             // TODO: Change the behavior of takeTask() so that it returns on timeout.
@@ -791,7 +791,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
             return false;
         }
-
+        /* 队列里没有任务，关闭时间 未超过 gracefulShutdownTimeout=15s ,但任务执行点>2s 则关闭线程 */
         // No tasks were added for last quiet period - hopefully safe to shut down.
         // (Hopefully because we really cannot make a guarantee that there will be no execute() calls by a user.)
         return true;
@@ -810,7 +810,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     @Override
-    public void execute(Runnable task) {
+    public void execute(Runnable task) {/* 执行任务 */
         ObjectUtil.checkNotNull(task, "task");
         execute(task, !(task instanceof LazyRunnable) && wakesUpForTask(task));
     }
@@ -972,7 +972,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     private void doStartThread() {
         assert thread == null;
-        executor.execute(new Runnable() {
+        executor.execute(new Runnable() {//ThreadPerTaskExecutor
             @Override
             public void run() {
                 thread = Thread.currentThread();/* 创建事件循环处理线程 */
@@ -1027,7 +1027,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
                         // We have the final set of tasks in the queue now, no more can be added, run all remaining.
                         // No need to loop here, this is the final pass.
-                        confirmShutdown();
+                        confirmShutdown();/* 无任务执行超过静默期2s，或者超过最大等待时间15s，退出循环 */
                     } finally {
                         try {
                             cleanup();

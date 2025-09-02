@@ -71,7 +71,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     protected abstract void initChannel(C ch) throws Exception;
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")     /* handlerAdded()先执行，这里忽略 */
     public final void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         // Normally this method will never be called as handlerAdded(...) should call initChannel(...) and remove
         // the handler.
@@ -104,7 +104,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
      */
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        if (ctx.channel().isRegistered()) {
+        if (ctx.channel().isRegistered()) {//注册到Selector
             // This should always be true with our current DefaultChannelPipeline implementation.
             // The good thing about calling initChannel(...) in handlerAdded(...) is that there will be no ordering
             // surprises if a ChannelInitializer will add another ChannelInitializer. This is as all handlers

@@ -66,7 +66,7 @@ public abstract class AbstractEventExecutorGroup implements EventExecutorGroup {
     }
 
     @Override
-    public Future<?> shutdownGracefully() {
+    public Future<?> shutdownGracefully() {/* 优雅关闭 */
         return shutdownGracefully(DEFAULT_SHUTDOWN_QUIET_PERIOD, DEFAULT_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS);
     }
 

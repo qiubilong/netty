@@ -34,8 +34,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractEventExecutor extends AbstractExecutorService implements EventExecutor {
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(AbstractEventExecutor.class);
 
-    static final long DEFAULT_SHUTDOWN_QUIET_PERIOD = 2;
-    static final long DEFAULT_SHUTDOWN_TIMEOUT = 15;
+    static final long DEFAULT_SHUTDOWN_QUIET_PERIOD = 2; /* 2s - 优雅关机 - 安全关闭时间 -2s内没新任务即可关闭 */
+    static final long DEFAULT_SHUTDOWN_TIMEOUT = 15;     /* 15s - 优雅关机最大等待时间 */
 
     private final EventExecutorGroup parent;
     private final Collection<EventExecutor> selfCollection = Collections.<EventExecutor>singleton(this);

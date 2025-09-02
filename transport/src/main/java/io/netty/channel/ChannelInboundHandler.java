@@ -24,7 +24,7 @@ public interface ChannelInboundHandler extends ChannelHandler {
     /**
      * The {@link Channel} of the {@link ChannelHandlerContext} was registered with its {@link EventLoop}
      */
-    void channelRegistered(ChannelHandlerContext ctx) throws Exception;
+    void channelRegistered(ChannelHandlerContext ctx) throws Exception;       /* 绑定IO事件循环线程 */
 
     /**
      * The {@link Channel} of the {@link ChannelHandlerContext} was unregistered from its {@link EventLoop}
@@ -45,7 +45,7 @@ public interface ChannelInboundHandler extends ChannelHandler {
     /**
      * Invoked when the current {@link Channel} has read a message from the peer.
      */
-    void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception;     /* 数据处理 */
+    void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception;     /* 传播数据 */
 
     /**
      * Invoked when the last message read by the current read operation has been consumed by

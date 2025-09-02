@@ -54,7 +54,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     private volatile SocketAddress localAddress;
     private volatile SocketAddress remoteAddress;
     private volatile EventLoop eventLoop; /* 绑定的处理线程 */
-    private volatile boolean registered;
+    private volatile boolean registered;//注册到Selector
     private boolean closeInitiated;
     private Throwable initialCloseCause;
 

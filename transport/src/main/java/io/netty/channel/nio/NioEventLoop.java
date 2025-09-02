@@ -522,9 +522,9 @@ public final class NioEventLoop extends SingleThreadEventLoop { /* 事件循环�
             } finally {
                 // Always handle shutdown even if the loop processing threw an exception.
                 try {
-                    if (isShuttingDown()) {
-                        closeAll();
-                        if (confirmShutdown()) {
+                    if (isShuttingDown()) {/* 4、判断线程是否关闭 */
+                        closeAll();/* 线程关闭，关闭所有连接通道 */
+                        if (confirmShutdown()) {/* 无任务执行超过静默期2s，或者超过最大等待时间15s，退出循环 */
                             return;
                         }
                     }
@@ -765,7 +765,7 @@ public final class NioEventLoop extends SingleThreadEventLoop { /* 事件循环�
             }
         }
 
-        for (AbstractNioChannel ch: channels) {
+        for (AbstractNioChannel ch: channels) { /* 关闭所有连接通道 */
             ch.unsafe().close(ch.unsafe().voidPromise());
         }
     }
