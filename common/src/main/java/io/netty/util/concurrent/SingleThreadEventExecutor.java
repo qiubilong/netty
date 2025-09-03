@@ -474,7 +474,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             // XXX: Hard-coded value - will make it configurable if it is really a problem.
             if ((runTasks & 0x3F) == 0) {
                 lastExecutionTime = ScheduledFutureTask.nanoTime();
-                if (lastExecutionTime >= deadline) {//执行时间到期
+                if (lastExecutionTime >= deadline) {/* 执行时间到期 */
                     break;
                 }
             }
@@ -756,9 +756,9 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         if (gracefulShutdownStartTime == 0) {
             gracefulShutdownStartTime = ScheduledFutureTask.nanoTime();
         }
-        /* runAllTasks()=true --> 说明至少执行一个任务（非WAKEUP_TASK） */
+        /* 执行完所有任务 - runAllTasks()=true --> 说明至少执行一个任务（非WAKEUP_TASK） */
         if (runAllTasks() || runShutdownHooks()) {
-            if (isShutdown()) {//如果设置了强制关机，这里会立即关闭，会丢失任务，不建议
+            if (isShutdown()) {//如果设置了强制关机，这里会立即关闭
                 // Executor shut down - no new tasks anymore.
                 return true;
             }
@@ -769,7 +769,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             if (gracefulShutdownQuietPeriod == 0) {
                 return true;
             }
-            taskQueue.offer(WAKEUP_TASK);/* 队列里还有任务，继续循环 */
+            taskQueue.offer(WAKEUP_TASK);/* 刚刚还有任务，继续等待一会 */
             return false;
         }
 
@@ -825,7 +825,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         addTask(task); /* 添加任务到队列 */
         if (!inEventLoop) {
             startThread(); /* 延迟创建 - 事件循环处理线程 */
-            if (isShutdown()) {
+            if (isShutdown()) {//state >= ST_SHUTDOWN 则移除任务
                 boolean reject = false;
                 try {
                     if (removeTask(task)) {
@@ -1024,10 +1024,10 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                                 break;
                             }
                         }
-
+                        /* 设置执行器状态=ST_SHUTDOWN，队列不能再添加新任务，confirmShutdown()会调用runAllTasks()执行完所有任务 */
                         // We have the final set of tasks in the queue now, no more can be added, run all remaining.
                         // No need to loop here, this is the final pass.
-                        confirmShutdown();/* 无任务执行超过静默期2s，或者超过最大等待时间15s，退出循环 */
+                        confirmShutdown();
                     } finally {
                         try {
                             cleanup();
