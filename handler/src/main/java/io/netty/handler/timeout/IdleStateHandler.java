@@ -237,11 +237,11 @@ public class IdleStateHandler extends ChannelDuplexHandler { /* 通道空闲探�
     }
 
     @Override
-    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception { /* 客户端通道 - 绑定事件循环处理线程 & 注册到多路复用器 */
         if (ctx.channel().isActive() && ctx.channel().isRegistered()) {
             // channelActive() event has been fired already, which means this.channelActive() will
             // not be invoked. We have to initialize here instead.
-            initialize(ctx);
+            initialize(ctx);/* 启动 - 检查定时器 */
         } else {
             // channelActive() event has not been fired yet.  this.channelActive() will be invoked
             // and initialization will occur there.
@@ -254,10 +254,10 @@ public class IdleStateHandler extends ChannelDuplexHandler { /* 通道空闲探�
     }
 
     @Override
-    public void channelRegistered(ChannelHandlerContext ctx) throws Exception { /* 客户端通道 - 绑定事件循环处理线程 & 注册到多路复用器 */
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         // Initialize early if channel is active already.
         if (ctx.channel().isActive()) {
-            initialize(ctx);/* 启动 - 检查定时器 */
+            initialize(ctx);
         }
         super.channelRegistered(ctx);
     }

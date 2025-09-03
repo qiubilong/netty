@@ -477,13 +477,13 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             AbstractChannel.this.eventLoop = eventLoop; /* 绑定 事件循环处理线程 EventLoop */
 
             if (eventLoop.inEventLoop()) {
-                register0(promise); /* Channel注册NIO多路复用selector，执行ChannelInitializer */
+                register0(promise);
             } else {
                 try {
                     eventLoop.execute(new Runnable() {
                         @Override
                         public void run() {
-                            register0(promise);
+                            register0(promise);/* Channel注册NIO多路复用selector，执行ChannelInitializer */
                         }
                     });
                 } catch (Throwable t) {

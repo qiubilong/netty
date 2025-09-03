@@ -630,7 +630,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         boolean inEventLoop = inEventLoop();
         boolean wakeup;
         int oldState;
-        for (;;) {
+        for (;;) { /* 设置关闭状态 */
             if (isShuttingDown()) {
                 return terminationFuture();
             }

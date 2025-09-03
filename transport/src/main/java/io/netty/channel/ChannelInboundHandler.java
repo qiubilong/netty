@@ -20,11 +20,11 @@ package io.netty.channel;
  * to hook in to state changes easily.
  */
 public interface ChannelInboundHandler extends ChannelHandler {
-
+    //void handlerAdded(ChannelHandlerContext ctx) throws Exception;         /* 1、Channel绑定循环线程 与注册Selector后 调用 */
     /**
      * The {@link Channel} of the {@link ChannelHandlerContext} was registered with its {@link EventLoop}
      */
-    void channelRegistered(ChannelHandlerContext ctx) throws Exception;       /* 绑定IO事件循环线程 */
+    void channelRegistered(ChannelHandlerContext ctx) throws Exception;       /* 2、绑定IO事件循环线程 */
 
     /**
      * The {@link Channel} of the {@link ChannelHandlerContext} was unregistered from its {@link EventLoop}
@@ -34,7 +34,7 @@ public interface ChannelInboundHandler extends ChannelHandler {
     /**
      * The {@link Channel} of the {@link ChannelHandlerContext} is now active
      */
-    void channelActive(ChannelHandlerContext ctx) throws Exception;             /* 连接建立 */
+    void channelActive(ChannelHandlerContext ctx) throws Exception;             /* 3、连接建立 */
 
     /**
      * The {@link Channel} of the {@link ChannelHandlerContext} was registered is now inactive and reached its
@@ -45,7 +45,7 @@ public interface ChannelInboundHandler extends ChannelHandler {
     /**
      * Invoked when the current {@link Channel} has read a message from the peer.
      */
-    void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception;     /* 传播数据 */
+    void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception;     /* 4、传播数据 */
 
     /**
      * Invoked when the last message read by the current read operation has been consumed by
