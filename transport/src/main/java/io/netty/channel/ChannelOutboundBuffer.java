@@ -51,7 +51,7 @@ import static java.lang.Math.min;
  * </ul>
  * </p>
  */
-public final class ChannelOutboundBuffer {
+public final class ChannelOutboundBuffer { /* 写缓冲区 */
     // Assuming a 64-bit JVM:
     //  - 16 bytes object header
     //  - 6 reference fields
@@ -111,13 +111,13 @@ public final class ChannelOutboundBuffer {
      * Add given message to this {@link ChannelOutboundBuffer}. The given {@link ChannelPromise} will be notified once
      * the message was written.
      */
-    public void addMessage(Object msg, int size, ChannelPromise promise) {
+    public void addMessage(Object msg, int size, ChannelPromise promise) { /* 写缓冲区 */
         Entry entry = Entry.newInstance(msg, size, total(msg), promise);
         if (tailEntry == null) {
             flushedEntry = null;
         } else {
             Entry tail = tailEntry;
-            tail.next = entry;
+            tail.next = entry; /* 写缓冲区链表末尾 */
         }
         tailEntry = entry;
         if (unflushedEntry == null) {
@@ -133,7 +133,7 @@ public final class ChannelOutboundBuffer {
      * Add a flush to this {@link ChannelOutboundBuffer}. This means all previous added messages are marked as flushed
      * and so you will be able to handle them.
      */
-    public void addFlush() {
+    public void addFlush() { /* 标记本次Flush消息列表 */
         // There is no need to process all entries if there was already a flush before and no new messages
         // where added in the meantime.
         //
@@ -253,7 +253,7 @@ public final class ChannelOutboundBuffer {
      * flushed message exists at the time this method is called it will return {@code false} to signal that no more
      * messages are ready to be handled.
      */
-    public boolean remove() {
+    public boolean remove() {/* 消息写入成功 */
         Entry e = flushedEntry;
         if (e == null) {
             clearNioBuffers();
@@ -269,7 +269,7 @@ public final class ChannelOutboundBuffer {
         if (!e.cancelled) {
             // only release message, notify and decrement if it was not canceled before.
             ReferenceCountUtil.safeRelease(msg);
-            safeSuccess(promise);
+            safeSuccess(promise);/* 消息写入成功 */
             decrementPendingOutboundBytes(size, false, true);
         }
 
@@ -399,7 +399,7 @@ public final class ChannelOutboundBuffer {
      *                 value maybe exceeded because we make a best effort to include at least 1 {@link ByteBuffer}
      *                 in the return value to ensure write progress is made.
      */
-    public ByteBuffer[] nioBuffers(int maxCount, long maxBytes) {
+    public ByteBuffer[] nioBuffers(int maxCount, long maxBytes) { /* 聚合消息 */
         assert maxCount > 0;
         assert maxBytes > 0;
         long nioBufferSize = 0;
@@ -457,7 +457,7 @@ public final class ChannelOutboundBuffer {
                     }
                 }
             }
-            entry = entry.next;
+            entry = entry.next; /* 写一个消息 */
         }
         this.nioBufferCount = nioBufferCount;
         this.nioBufferSize = nioBufferSize;

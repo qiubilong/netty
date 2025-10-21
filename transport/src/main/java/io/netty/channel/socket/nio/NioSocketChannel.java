@@ -386,11 +386,11 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                 // Directly return here so incompleteWrite(...) is not called.
                 return;
             }
-
+            /* 聚集写 ----   批量处理: 将多个小操作合并为一个大操作  --- 避免多次系统调用  */
             // Ensure the pending writes are made of ByteBufs only.
             int maxBytesPerGatheringWrite = ((NioSocketChannelConfig) config).getMaxBytesPerGatheringWrite();
             ByteBuffer[] nioBuffers = in.nioBuffers(1024, maxBytesPerGatheringWrite);
-            int nioBufferCnt = in.nioBufferCount();
+            int nioBufferCnt = in.nioBufferCount();//buffer数量
 
             // Always use nioBuffers() to workaround data-corruption.
             // See https://github.com/netty/netty/issues/2761
@@ -399,13 +399,13 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                     // We have something else beside ByteBuffers to write so fallback to normal writes.
                     writeSpinCount -= doWrite0(in);
                     break;
-                case 1: {
+                case 1: {//只有一个buffer
                     // Only one ByteBuf so use non-gathering write
                     // Zero length buffers are not added to nioBuffers by ChannelOutboundBuffer, so there is no need
                     // to check if the total size of all the buffers is non-zero.
                     ByteBuffer buffer = nioBuffers[0];
                     int attemptedBytes = buffer.remaining();
-                    final int localWrittenBytes = ch.write(buffer);/* 写数据到SocketChannel */
+                    final int localWrittenBytes = ch.write(buffer);/* 写数据到SocketChannel - 网卡 */
                     if (localWrittenBytes <= 0) {
                         incompleteWrite(true);/* SocketChannel写缓冲区已满，注册监听可写事件 - interestOps & SelectionKey.OP_WRITE */
                         return;

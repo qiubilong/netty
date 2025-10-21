@@ -50,7 +50,7 @@ public class ChatServer {
 
             ChannelFuture channelFuture = serverBootstrap.bind(9000).sync();
             log.info("ChatServer 启动成功...");
-            channelFuture.channel().closeFuture().sync();
+            channelFuture.channel().closeFuture().sync();//阻塞等待关闭
             log.info("ChatServer 关闭...");
         }finally {
             boss.shutdownGracefully();

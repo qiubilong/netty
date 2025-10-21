@@ -45,14 +45,14 @@ import java.util.concurrent.TimeUnit;
 public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerChannel> {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(ServerBootstrap.class);
-
+    /** child 可以理解为Server accept后，新建的客户端通道Channel，因此 childGroup、childHandler都是为 客户端Channel服务  */
     // The order in which child ChannelOptions are applied is important they may depend on each other for validation
     // purposes.
     private final Map<ChannelOption<?>, Object> childOptions = new LinkedHashMap<ChannelOption<?>, Object>();
     private final Map<AttributeKey<?>, Object> childAttrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
     private final ServerBootstrapConfig config = new ServerBootstrapConfig(this);
-    private volatile EventLoopGroup childGroup;    /*  io读写 worker工作线程组  */
-    private volatile ChannelHandler childHandler;  /*  客户端Channel通道/pipeLine 初始化 */
+    private volatile EventLoopGroup childGroup;    /*  客户端Channel - io读写 - worker工作线程组  */
+    private volatile ChannelHandler childHandler;  /*  客户端Channel通道/pipeLine - 初始化 - 处理器 */
 
     public ServerBootstrap() { }
 

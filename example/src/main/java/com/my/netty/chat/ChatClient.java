@@ -140,7 +140,6 @@ public class ChatClient {
             for (int i = 0; i < 10; i++) {
                 RpcMessageUtil.writeAndFlush(channel,"hello world!"+i);//测试拆分包
             }
-
             channel.closeFuture().sync();
         }finally {
             work.shutdownGracefully();

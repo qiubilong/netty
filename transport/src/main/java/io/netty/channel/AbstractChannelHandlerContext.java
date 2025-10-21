@@ -486,7 +486,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         }
 
         final AbstractChannelHandlerContext next = findContextOutbound(MASK_BIND);/* 查找可以处理Bind服务器地址端口的Handler - HeadContext */
-        EventExecutor executor = next.executor();/* Channel绑定的线程 */
+        EventExecutor executor = next.executor();/* Handler线程池 - 如果无自定义线程，就使用IO事件循环线程 */
         if (executor.inEventLoop()) {
             next.invokeBind(localAddress, promise);/* 绑定地址端口 - ServerSocketChannel */
         } else {
@@ -792,7 +792,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
                 next.invokeWrite(m, promise);
             }
         } else {
-            final WriteTask task = WriteTask.newInstance(next, m, promise, flush);
+            final WriteTask task = WriteTask.newInstance(next, m, promise, flush);/* 异步发送数据 */
             if (!safeExecute(executor, task, promise, m, !flush)) {
                 // We failed to submit the WriteTask. We need to cancel it so we decrement the pending bytes
                 // and put it back in the Recycler for re-use later.
@@ -986,7 +986,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             if (lazy && executor instanceof AbstractEventExecutor) {
                 ((AbstractEventExecutor) executor).lazyExecute(runnable);
             } else {
-                executor.execute(runnable);
+                executor.execute(runnable);/* 提交任务 */
             }
             return true;
         } catch (Throwable cause) {
@@ -1068,7 +1068,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
                 if (size >= 0) {
                     ctx.invokeWrite(msg, promise);
                 } else {
-                    ctx.invokeWriteAndFlush(msg, promise);
+                    ctx.invokeWriteAndFlush(msg, promise); /* 写入 outboundBuffer 并立即刷入网卡 */
                 }
             } finally {
                 recycle();

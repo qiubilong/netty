@@ -509,7 +509,7 @@ public class IdleStateHandler extends ChannelDuplexHandler { /* 通道空闲探�
                 }
             } else {
                 // Read occurred before the timeout - set a new timeout with shorter delay.
-                readerIdleTimeout = schedule(ctx, this, nextDelay, TimeUnit.NANOSECONDS);
+                readerIdleTimeout = schedule(ctx, this, nextDelay, TimeUnit.NANOSECONDS); /* 数据正在处理中，新建下个倒计时任务 */
             }
         }
     }

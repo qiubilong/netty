@@ -137,7 +137,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
         // is used to fire events for the same channel.
         EventExecutor childExecutor = childExecutors.get(group);
         if (childExecutor == null) {
-            childExecutor = group.next();
+            childExecutor = group.next(); /* 虽然group是唯一的，但是每个Channel通道都有一个childExecutors，第一次获取执行器时都为null，因此会执行group.next()轮询线程组  */
             childExecutors.put(group, childExecutor);
         }
         return childExecutor;
@@ -195,7 +195,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
         return addLast(null, name, handler);
     }
 
-    @Override
+    @Override                            // group == 业务线程池，默认null，使用channel绑定的线程池
     public final ChannelPipeline addLast(EventExecutorGroup group, String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         synchronized (this) {
@@ -203,7 +203,7 @@ public class DefaultChannelPipeline implements ChannelPipeline { /* 双向链表
 
             newCtx = newContext(group, filterName(name, handler), handler);
 
-            addLast0(newCtx);
+            addLast0(newCtx);//* 插入HandlerContext链表
 
             // If the registered is false it means that the channel was not registered on an eventLoop yet.
             // In this case we add the context to the pipeline and add a task that will call

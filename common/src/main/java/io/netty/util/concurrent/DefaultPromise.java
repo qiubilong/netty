@@ -47,7 +47,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
             StacklessCancellationException.newInstance(DefaultPromise.class, "cancel(...)"));
     private static final StackTraceElement[] CANCELLATION_STACK = CANCELLATION_CAUSE_HOLDER.cause.getStackTrace();
 
-    private volatile Object result;
+    private volatile Object result; /* 异步结果 */
     private final EventExecutor executor;
     /**
      * One or more listeners. Can be a {@link GenericFutureListener} or a {@link DefaultFutureListeners}.

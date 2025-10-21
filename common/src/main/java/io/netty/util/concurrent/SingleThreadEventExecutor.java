@@ -346,7 +346,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     final boolean offerTask(Runnable task) {
-        if (isShutdown()) {
+        if (isShutdown()) {/* state >= ST_SHUTDOWN --- 不能提交任务 */
             reject();
         }
         return taskQueue.offer(task);
@@ -810,7 +810,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     @Override
-    public void execute(Runnable task) {/* 执行任务 */
+    public void execute(Runnable task) {/* 提交任务 */
         ObjectUtil.checkNotNull(task, "task");
         execute(task, !(task instanceof LazyRunnable) && wakesUpForTask(task));
     }

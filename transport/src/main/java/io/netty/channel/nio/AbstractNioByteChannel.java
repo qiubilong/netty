@@ -220,11 +220,11 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                 return 0;
             }
 
-            final int localFlushedAmount = doWriteBytes(buf);
+            final int localFlushedAmount = doWriteBytes(buf); /* 写入网卡 */
             if (localFlushedAmount > 0) {
                 in.progress(localFlushedAmount);
                 if (!buf.isReadable()) {
-                    in.remove();
+                    in.remove();/* 写入网卡 - 异步通知 */
                 }
                 return 1;
             }
@@ -289,7 +289,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
     protected final void incompleteWrite(boolean setOpWrite) {
         // Did not write completely.
         if (setOpWrite) {
-            setOpWrite();
+            setOpWrite();/* 监听可写事件 -  key.interestOps(interestOps | SelectionKey.OP_WRITE); */
         } else {
             // It is possible that we have set the write OP, woken up by NIO because the socket is writable, and then
             // use our write quantum. In this case we no longer want to set the write OP because the socket is still
